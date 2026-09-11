@@ -43,44 +43,124 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
     role = crud.get_role(db, role_id)
     if role is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
-    if crud.count_users_with_role(db, role_id) > 0:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Role is assigned to existing users")
+    if crud.count_personnel_with_role(db, role_id) > 0:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Role is assigned to existing personnel")
     crud.delete_role(db, role)
 
 
-@router.post("/users", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
-def register_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
-    if crud.get_role(db, user_in.role_id) is None:
+@router.post("/personnel", response_model=schemas.PersonnelRead, status_code=status.HTTP_201_CREATED)
+def register_personnel(personnel_in: schemas.PersonnelCreate, db: Session = Depends(get_db)):
+    if crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
-    return crud.create_user(db, user_in)
+    return crud.create_personnel(db, personnel_in)
 
 
-@router.get("/users", response_model=list[schemas.UserRead])
-def list_users(db: Session = Depends(get_db)):
-    return crud.list_users(db)
+@router.get("/personnel", response_model=list[schemas.PersonnelRead])
+def list_personnel(db: Session = Depends(get_db)):
+    return crud.list_personnel(db)
 
 
-@router.get("/users/{user_id}", response_model=schemas.UserRead)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = crud.get_user(db, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return user
+@router.get("/personnel/{personnel_id}", response_model=schemas.PersonnelRead)
+def get_personnel(personnel_id: int, db: Session = Depends(get_db)):
+    personnel = crud.get_personnel(db, personnel_id)
+    if personnel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
+    return personnel
 
 
-@router.put("/users/{user_id}", response_model=schemas.UserRead)
-def update_user(user_id: int, user_in: schemas.UserCreate, db: Session = Depends(get_db)):
-    user = crud.get_user(db, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if crud.get_role(db, user_in.role_id) is None:
+@router.put("/personnel/{personnel_id}", response_model=schemas.PersonnelRead)
+def update_personnel(personnel_id: int, personnel_in: schemas.PersonnelCreate, db: Session = Depends(get_db)):
+    personnel = crud.get_personnel(db, personnel_id)
+    if personnel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
+    if crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
-    return crud.update_user(db, user, user_in)
+    return crud.update_personnel(db, personnel, personnel_in)
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    user = crud.get_user(db, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    crud.delete_user(db, user)
+@router.delete("/personnel/{personnel_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_personnel(personnel_id: int, db: Session = Depends(get_db)):
+    personnel = crud.get_personnel(db, personnel_id)
+    if personnel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
+    crud.delete_personnel(db, personnel)
+
+
+@router.post("/products", response_model=schemas.ProductRead, status_code=status.HTTP_201_CREATED)
+def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_db)):
+    if crud.get_product_by_name(db, product_in.name):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Product already exists")
+    return crud.create_product(db, product_in)
+
+
+@router.get("/products", response_model=list[schemas.ProductRead])
+def list_products(db: Session = Depends(get_db)):
+    return crud.list_products(db)
+
+
+@router.get("/products/{product_id}", response_model=schemas.ProductRead)
+def get_product(product_id: int, db: Session = Depends(get_db)):
+    product = crud.get_product(db, product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    return product
+
+
+@router.post("/quantities", response_model=schemas.QuantityRead, status_code=status.HTTP_201_CREATED)
+def create_quantity(quantity_in: schemas.QuantityCreate, db: Session = Depends(get_db)):
+    if crud.get_quantity_by_value(db, quantity_in.quantity):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Quantity already exists")
+    return crud.create_quantity(db, quantity_in)
+
+
+@router.get("/quantities", response_model=list[schemas.QuantityRead])
+def list_quantities(db: Session = Depends(get_db)):
+    return crud.list_quantities(db)
+
+
+@router.get("/quantities/{quantity_id}", response_model=schemas.QuantityRead)
+def get_quantity(quantity_id: int, db: Session = Depends(get_db)):
+    quantity = crud.get_quantity(db, quantity_id)
+    if quantity is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
+    return quantity
+
+
+@router.post("/depots", response_model=schemas.DepotRead, status_code=status.HTTP_201_CREATED)
+def create_depot(depot_in: schemas.DepotCreate, db: Session = Depends(get_db)):
+    if crud.get_depot_by_name(db, depot_in.name):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Depot already exists")
+    return crud.create_depot(db, depot_in)
+
+
+@router.get("/depots", response_model=list[schemas.DepotRead])
+def list_depots(db: Session = Depends(get_db)):
+    return crud.list_depots(db)
+
+
+@router.get("/depots/{depot_id}", response_model=schemas.DepotRead)
+def get_depot(depot_id: int, db: Session = Depends(get_db)):
+    depot = crud.get_depot(db, depot_id)
+    if depot is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
+    return depot
+
+
+@router.post("/prices", response_model=schemas.PriceRead, status_code=status.HTTP_201_CREATED)
+def create_price(price_in: schemas.PriceCreate, db: Session = Depends(get_db)):
+    if crud.get_quantity(db, price_in.quantity_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
+    return crud.create_price(db, price_in)
+
+
+@router.get("/prices", response_model=list[schemas.PriceRead])
+def list_prices(db: Session = Depends(get_db)):
+    return crud.list_prices(db)
+
+
+@router.get("/prices/{price_id}", response_model=schemas.PriceRead)
+def get_price(price_id: int, db: Session = Depends(get_db)):
+    price = crud.get_price(db, price_id)
+    if price is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price not found")
+    return price

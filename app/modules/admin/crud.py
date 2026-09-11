@@ -36,43 +36,122 @@ def delete_role(db: Session, role: models.Role) -> None:
     db.commit()
 
 
-def count_users_with_role(db: Session, role_id: int) -> int:
-    return db.scalar(select(func.count()).select_from(models.User).where(models.User.role_id == role_id)) or 0
+def count_personnel_with_role(db: Session, role_id: int) -> int:
+    return db.scalar(select(func.count()).select_from(models.Personnel).where(models.Personnel.role_id == role_id)) or 0
 
 
-def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
-    user = models.User(
-        role_id=user_in.role_id,
-        name=user_in.name,
-        gender=user_in.gender,
-        contact=user_in.contact,
-        salary=user_in.salary,
+def create_personnel(db: Session, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
+    personnel = models.Personnel(
+        role_id=personnel_in.role_id,
+        name=personnel_in.name,
+        gender=personnel_in.gender,
+        contact=personnel_in.contact,
+        salary=personnel_in.salary,
     )
-    db.add(user)
+    db.add(personnel)
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(personnel)
+    return personnel
 
 
-def get_user(db: Session, user_id: int) -> models.User | None:
-    return db.get(models.User, user_id)
+def get_personnel(db: Session, personnel_id: int) -> models.Personnel | None:
+    return db.get(models.Personnel, personnel_id)
 
 
-def list_users(db: Session) -> list[models.User]:
-    return list(db.scalars(select(models.User).order_by(models.User.id)))
+def list_personnel(db: Session) -> list[models.Personnel]:
+    return list(db.scalars(select(models.Personnel).order_by(models.Personnel.id)))
 
 
-def update_user(db: Session, user: models.User, user_in: schemas.UserCreate) -> models.User:
-    user.role_id = user_in.role_id
-    user.name = user_in.name
-    user.gender = user_in.gender
-    user.contact = user_in.contact
-    user.salary = user_in.salary
+def update_personnel(db: Session, personnel: models.Personnel, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
+    personnel.role_id = personnel_in.role_id
+    personnel.name = personnel_in.name
+    personnel.gender = personnel_in.gender
+    personnel.contact = personnel_in.contact
+    personnel.salary = personnel_in.salary
     db.commit()
-    db.refresh(user)
-    return user
+    db.refresh(personnel)
+    return personnel
 
 
-def delete_user(db: Session, user: models.User) -> None:
-    db.delete(user)
+def delete_personnel(db: Session, personnel: models.Personnel) -> None:
+    db.delete(personnel)
     db.commit()
+
+
+def create_product(db: Session, product_in: schemas.ProductCreate) -> models.Product:
+    product = models.Product(name=product_in.name)
+    db.add(product)
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+def get_product(db: Session, product_id: int) -> models.Product | None:
+    return db.get(models.Product, product_id)
+
+
+def get_product_by_name(db: Session, name: str) -> models.Product | None:
+    return db.scalar(select(models.Product).where(models.Product.name == name))
+
+
+def list_products(db: Session) -> list[models.Product]:
+    return list(db.scalars(select(models.Product).order_by(models.Product.id)))
+
+
+def create_quantity(db: Session, quantity_in: schemas.QuantityCreate) -> models.Quantity:
+    quantity = models.Quantity(quantity=quantity_in.quantity)
+    db.add(quantity)
+    db.commit()
+    db.refresh(quantity)
+    return quantity
+
+
+def get_quantity(db: Session, quantity_id: int) -> models.Quantity | None:
+    return db.get(models.Quantity, quantity_id)
+
+
+def get_quantity_by_value(db: Session, value: int) -> models.Quantity | None:
+    return db.scalar(select(models.Quantity).where(models.Quantity.quantity == value))
+
+
+def list_quantities(db: Session) -> list[models.Quantity]:
+    return list(db.scalars(select(models.Quantity).order_by(models.Quantity.id)))
+
+
+def create_depot(db: Session, depot_in: schemas.DepotCreate) -> models.Depot:
+    depot = models.Depot(name=depot_in.name, location=depot_in.location)
+    db.add(depot)
+    db.commit()
+    db.refresh(depot)
+    return depot
+
+
+def get_depot(db: Session, depot_id: int) -> models.Depot | None:
+    return db.get(models.Depot, depot_id)
+
+
+def get_depot_by_name(db: Session, name: str) -> models.Depot | None:
+    return db.scalar(select(models.Depot).where(models.Depot.name == name))
+
+
+def list_depots(db: Session) -> list[models.Depot]:
+    return list(db.scalars(select(models.Depot).order_by(models.Depot.id)))
+
+
+def create_price(db: Session, price_in: schemas.PriceCreate) -> models.Price:
+    price = models.Price(
+        quantity_id=price_in.quantity_id,
+        amount=price_in.amount,
+    )
+    db.add(price)
+    db.commit()
+    db.refresh(price)
+    return price
+
+
+def get_price(db: Session, price_id: int) -> models.Price | None:
+    return db.get(models.Price, price_id)
+
+
+def list_prices(db: Session) -> list[models.Price]:
+    return list(db.scalars(select(models.Price).order_by(models.Price.id)))

@@ -4,8 +4,6 @@ Base URL prefix: `/admin`
 
 All request/response bodies are JSON. Interactive docs are available at `/docs` when the server is running.
 
-Covers the tables tested so far: **Roles**, **Users**.
-
 ## Roles
 
 ### Create role
@@ -32,11 +30,6 @@ Responses:
 `GET /admin/roles`
 
 - `200 OK` — returns an array of roles
-```json
-[
-  { "id": 1, "name": "Depot Attendant" }
-]
-```
 
 ### Get role by ID
 `GET /admin/roles/{role_id}`
@@ -65,14 +58,14 @@ Responses:
 Responses:
 - `204 No Content` — role deleted
 - `404 Not Found` — no role with that ID
-- `409 Conflict` — role is still assigned to one or more users (delete/reassign those users first)
+- `409 Conflict` — role is still assigned to one or more personnel (delete/reassign those first)
 
 ---
 
-## Users
+## Personnel
 
-### Register user
-`POST /admin/users`
+### Register personnel
+`POST /admin/personnel`
 
 Request body:
 ```json
@@ -86,7 +79,7 @@ Request body:
 ```
 
 Responses:
-- `201 Created` — returns the created user
+- `201 Created` — returns the created personnel record
 ```json
 {
   "id": 1,
@@ -101,19 +94,19 @@ Responses:
 - `404 Not Found` — `role_id` does not reference an existing role
 - `422 Unprocessable Entity` — validation failure (e.g. `salary` not greater than 0, `name`/`contact` too short)
 
-### List users
-`GET /admin/users`
+### List personnel
+`GET /admin/personnel`
 
-- `200 OK` — returns an array of users
+- `200 OK` — returns an array of personnel records
 
-### Get user by ID
-`GET /admin/users/{user_id}`
+### Get personnel by ID
+`GET /admin/personnel/{personnel_id}`
 
-- `200 OK` — returns the user
-- `404 Not Found` — no user with that ID
+- `200 OK` — returns the personnel record
+- `404 Not Found` — no personnel record with that ID
 
-### Update user
-`PUT /admin/users/{user_id}`
+### Update personnel
+`PUT /admin/personnel/{personnel_id}`
 
 Request body (full replace, same shape as register):
 ```json
@@ -127,24 +120,168 @@ Request body (full replace, same shape as register):
 ```
 
 Responses:
-- `200 OK` — returns the updated user
-- `404 Not Found` — no user with that ID, or `role_id` does not reference an existing role
+- `200 OK` — returns the updated personnel record
+- `404 Not Found` — no personnel record with that ID, or `role_id` does not reference an existing role
 - `422 Unprocessable Entity` — validation failure
 
-### Delete user
-`DELETE /admin/users/{user_id}`
+### Delete personnel
+`DELETE /admin/personnel/{personnel_id}`
 
 Responses:
-- `204 No Content` — user deleted
-- `404 Not Found` — no user with that ID
+- `204 No Content` — personnel record deleted
+- `404 Not Found` — no personnel record with that ID
+
+---
+
+## Products
+
+### Create product
+`POST /admin/products`
+
+Request body:
+```json
+{
+  "name": "Pepsi 500ml"
+}
+```
+
+Responses:
+- `201 Created` — returns the created product
+```json
+{
+  "id": 1,
+  "name": "Pepsi 500ml"
+}
+```
+- `409 Conflict` — a product with that `name` already exists
+
+### List products
+`GET /admin/products`
+
+- `200 OK` — returns an array of products
+
+### Get product by ID
+`GET /admin/products/{product_id}`
+
+- `200 OK` — returns the product
+- `404 Not Found` — no product with that ID
+
+---
+
+## Quantities
+
+### Create quantity
+`POST /admin/quantities`
+
+Request body:
+```json
+{
+  "quantity": 24
+}
+```
+
+Responses:
+- `201 Created` — returns the created quantity
+```json
+{
+  "id": 1,
+  "quantity": 24
+}
+```
+- `409 Conflict` — that `quantity` value already exists
+- `422 Unprocessable Entity` — `quantity` not greater than 0
+
+### List quantities
+`GET /admin/quantities`
+
+- `200 OK` — returns an array of quantities
+
+### Get quantity by ID
+`GET /admin/quantities/{quantity_id}`
+
+- `200 OK` — returns the quantity
+- `404 Not Found` — no quantity with that ID
+
+---
+
+## Depots
+
+### Create depot
+`POST /admin/depots`
+
+Request body:
+```json
+{
+  "name": "Kampala Depot",
+  "location": "Kampala Industrial Area"
+}
+```
+
+Responses:
+- `201 Created` — returns the created depot
+```json
+{
+  "id": 1,
+  "name": "Kampala Depot",
+  "location": "Kampala Industrial Area"
+}
+```
+- `409 Conflict` — a depot with that `name` already exists
+
+### List depots
+`GET /admin/depots`
+
+- `200 OK` — returns an array of depots
+
+### Get depot by ID
+`GET /admin/depots/{depot_id}`
+
+- `200 OK` — returns the depot
+- `404 Not Found` — no depot with that ID
+
+---
+
+## Prices
+
+> Note: a price is tied only to a `quantity_id` (not a specific product).
+
+### Create price
+`POST /admin/prices`
+
+Request body:
+```json
+{
+  "quantity_id": 1,
+  "amount": 8500
+}
+```
+
+Responses:
+- `201 Created` — returns the created price
+```json
+{
+  "id": 1,
+  "quantity_id": 1,
+  "amount": "8500.00"
+}
+```
+- `404 Not Found` — `quantity_id` does not reference an existing quantity
+- `422 Unprocessable Entity` — `amount` not greater than 0
+
+### List prices
+`GET /admin/prices`
+
+- `200 OK` — returns an array of prices
+
+### Get price by ID
+`GET /admin/prices/{price_id}`
+
+- `200 OK` — returns the price
+- `404 Not Found` — no price with that ID
 
 ---
 
 ## Not yet implemented
 
 These are part of the admin scope but not built yet:
-- Assign/change a user's role
-- Register products
-- Register quantities
-- Register prices
-- Register depots
+- PUT/DELETE for products, quantities, depots, prices

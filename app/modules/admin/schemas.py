@@ -18,23 +18,27 @@ class RoleRead(BaseModel):
 
 
 class PersonnelCreate(BaseModel):
-    role_id: int
+    role_id: int | None = None
     name: str = Field(min_length=2, max_length=150)
     gender: Gender
     contact: str = Field(min_length=7, max_length=20)
-    salary: Decimal = Field(gt=0)
+    salary: Decimal | None = Field(default=None, gt=0)
 
 
 class PersonnelRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    role_id: int
+    role_id: int | None
     name: str
     gender: Gender
     contact: str
-    salary: Decimal
+    salary: Decimal | None
     created_at: datetime
+
+
+class PersonnelRoleAssign(BaseModel):
+    role_id: int
 
 
 class ProductCreate(BaseModel):

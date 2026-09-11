@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+﻿from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.admin import models, schemas
@@ -20,8 +20,8 @@ def get_role_by_name(db: Session, name: str) -> models.Role | None:
     return db.scalar(select(models.Role).where(models.Role.name == name))
 
 
-def list_roles(db: Session) -> list[models.Role]:
-    return list(db.scalars(select(models.Role).order_by(models.Role.id)))
+def list_roles(db: Session, skip: int = 0, limit: int = 10) -> list[models.Role]:
+    return list(db.scalars(select(models.Role).order_by(models.Role.id).offset(skip).limit(limit)))
 
 
 def update_role(db: Session, role: models.Role, role_in: schemas.RoleCreate) -> models.Role:
@@ -58,8 +58,8 @@ def get_personnel(db: Session, personnel_id: int) -> models.Personnel | None:
     return db.get(models.Personnel, personnel_id)
 
 
-def list_personnel(db: Session) -> list[models.Personnel]:
-    return list(db.scalars(select(models.Personnel).order_by(models.Personnel.id)))
+def list_personnel(db: Session, skip: int = 0, limit: int = 10) -> list[models.Personnel]:
+    return list(db.scalars(select(models.Personnel).order_by(models.Personnel.id).offset(skip).limit(limit)))
 
 
 def update_personnel(db: Session, personnel: models.Personnel, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
@@ -78,6 +78,13 @@ def delete_personnel(db: Session, personnel: models.Personnel) -> None:
     db.commit()
 
 
+def assign_personnel_role(db: Session, personnel: models.Personnel, role_id: int) -> models.Personnel:
+    personnel.role_id = role_id
+    db.commit()
+    db.refresh(personnel)
+    return personnel
+
+
 def create_product(db: Session, product_in: schemas.ProductCreate) -> models.Product:
     product = models.Product(name=product_in.name)
     db.add(product)
@@ -94,8 +101,8 @@ def get_product_by_name(db: Session, name: str) -> models.Product | None:
     return db.scalar(select(models.Product).where(models.Product.name == name))
 
 
-def list_products(db: Session) -> list[models.Product]:
-    return list(db.scalars(select(models.Product).order_by(models.Product.id)))
+def list_products(db: Session, skip: int = 0, limit: int = 10) -> list[models.Product]:
+    return list(db.scalars(select(models.Product).order_by(models.Product.id).offset(skip).limit(limit)))
 
 
 def create_quantity(db: Session, quantity_in: schemas.QuantityCreate) -> models.Quantity:
@@ -114,8 +121,8 @@ def get_quantity_by_value(db: Session, value: str) -> models.Quantity | None:
     return db.scalar(select(models.Quantity).where(models.Quantity.quantity == value))
 
 
-def list_quantities(db: Session) -> list[models.Quantity]:
-    return list(db.scalars(select(models.Quantity).order_by(models.Quantity.id)))
+def list_quantities(db: Session, skip: int = 0, limit: int = 10) -> list[models.Quantity]:
+    return list(db.scalars(select(models.Quantity).order_by(models.Quantity.id).offset(skip).limit(limit)))
 
 
 def create_depot(db: Session, depot_in: schemas.DepotCreate) -> models.Depot:
@@ -134,8 +141,8 @@ def get_depot_by_name(db: Session, name: str) -> models.Depot | None:
     return db.scalar(select(models.Depot).where(models.Depot.name == name))
 
 
-def list_depots(db: Session) -> list[models.Depot]:
-    return list(db.scalars(select(models.Depot).order_by(models.Depot.id)))
+def list_depots(db: Session, skip: int = 0, limit: int = 10) -> list[models.Depot]:
+    return list(db.scalars(select(models.Depot).order_by(models.Depot.id).offset(skip).limit(limit)))
 
 
 def create_price(db: Session, price_in: schemas.PriceCreate) -> models.Price:
@@ -153,5 +160,5 @@ def get_price(db: Session, price_id: int) -> models.Price | None:
     return db.get(models.Price, price_id)
 
 
-def list_prices(db: Session) -> list[models.Price]:
-    return list(db.scalars(select(models.Price).order_by(models.Price.id)))
+def list_prices(db: Session, skip: int = 0, limit: int = 10) -> list[models.Price]:
+    return list(db.scalars(select(models.Price).order_by(models.Price.id).offset(skip).limit(limit)))

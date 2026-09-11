@@ -4,6 +4,14 @@ Base URL prefix: `/admin`
 
 All request/response bodies are JSON. Interactive docs are available at `/docs` when the server is running.
 
+### Pagination
+
+Every `GET` list endpoint (roles, personnel, products, quantities, depots, prices) accepts:
+- `skip` (default `0`) — number of records to skip
+- `limit` (default `10`, max `100`) — number of records to return
+
+Example: `GET /admin/personnel?skip=10&limit=10` returns the second page of 10.
+
 ## Roles
 
 ### Create role
@@ -130,6 +138,22 @@ Responses:
 Responses:
 - `204 No Content` — personnel record deleted
 - `404 Not Found` — no personnel record with that ID
+
+### Assign role
+`PATCH /admin/personnel/{personnel_id}/role`
+
+Lightweight alternative to `PUT` when you only want to change someone's role — no need to resend name/gender/contact/salary.
+
+Request body:
+```json
+{
+  "role_id": 2
+}
+```
+
+Responses:
+- `200 OK` — returns the updated personnel record with the new `role_id`
+- `404 Not Found` — no personnel record with that ID, or `role_id` does not reference an existing role
 
 ---
 

@@ -26,14 +26,14 @@ class Personnel(Base):
     __tablename__ = "personnel"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=True)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     gender: Mapped[Gender] = mapped_column(
         SqlEnum(Gender, name="gender_enum", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
         nullable=False,
     )
     contact: Mapped[str] = mapped_column(String(20), nullable=False)
-    salary: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    salary: Mapped[float] = mapped_column(Numeric(10, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     role: Mapped["Role"] = relationship(back_populates="personnel")

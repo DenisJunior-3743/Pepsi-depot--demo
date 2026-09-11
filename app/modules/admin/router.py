@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -15,8 +15,12 @@ def create_role(role_in: schemas.RoleCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/roles", response_model=list[schemas.RoleRead])
-def list_roles(db: Session = Depends(get_db)):
-    return crud.list_roles(db)
+def list_roles(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return crud.list_roles(db, skip=skip, limit=limit)
 
 
 @router.get("/roles/{role_id}", response_model=schemas.RoleRead)
@@ -50,14 +54,18 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
 
 @router.post("/personnel", response_model=schemas.PersonnelRead, status_code=status.HTTP_201_CREATED)
 def register_personnel(personnel_in: schemas.PersonnelCreate, db: Session = Depends(get_db)):
-    if crud.get_role(db, personnel_in.role_id) is None:
+    if personnel_in.role_id is not None and crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
     return crud.create_personnel(db, personnel_in)
 
 
 @router.get("/personnel", response_model=list[schemas.PersonnelRead])
-def list_personnel(db: Session = Depends(get_db)):
-    return crud.list_personnel(db)
+def list_personnel(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return crud.list_personnel(db, skip=skip, limit=limit)
 
 
 @router.get("/personnel/{personnel_id}", response_model=schemas.PersonnelRead)
@@ -73,7 +81,7 @@ def update_personnel(personnel_id: int, personnel_in: schemas.PersonnelCreate, d
     personnel = crud.get_personnel(db, personnel_id)
     if personnel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
-    if crud.get_role(db, personnel_in.role_id) is None:
+    if personnel_in.role_id is not None and crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
     return crud.update_personnel(db, personnel, personnel_in)
 
@@ -86,6 +94,16 @@ def delete_personnel(personnel_id: int, db: Session = Depends(get_db)):
     crud.delete_personnel(db, personnel)
 
 
+@router.patch("/personnel/{personnel_id}/role", response_model=schemas.PersonnelRead)
+def assign_personnel_role(personnel_id: int, role_in: schemas.PersonnelRoleAssign, db: Session = Depends(get_db)):
+    personnel = crud.get_personnel(db, personnel_id)
+    if personnel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
+    if crud.get_role(db, role_in.role_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    return crud.assign_personnel_role(db, personnel, role_in.role_id)
+
+
 @router.post("/products", response_model=schemas.ProductRead, status_code=status.HTTP_201_CREATED)
 def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_db)):
     if crud.get_product_by_name(db, product_in.name):
@@ -94,8 +112,12 @@ def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_
 
 
 @router.get("/products", response_model=list[schemas.ProductRead])
-def list_products(db: Session = Depends(get_db)):
-    return crud.list_products(db)
+def list_products(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return crud.list_products(db, skip=skip, limit=limit)
 
 
 @router.get("/products/{product_id}", response_model=schemas.ProductRead)
@@ -114,8 +136,12 @@ def create_quantity(quantity_in: schemas.QuantityCreate, db: Session = Depends(g
 
 
 @router.get("/quantities", response_model=list[schemas.QuantityRead])
-def list_quantities(db: Session = Depends(get_db)):
-    return crud.list_quantities(db)
+def list_quantities(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return crud.list_quantities(db, skip=skip, limit=limit)
 
 
 @router.get("/quantities/{quantity_id}", response_model=schemas.QuantityRead)
@@ -134,8 +160,12 @@ def create_depot(depot_in: schemas.DepotCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/depots", response_model=list[schemas.DepotRead])
-def list_depots(db: Session = Depends(get_db)):
-    return crud.list_depots(db)
+def list_depots(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return crud.list_depots(db, skip=skip, limit=limit)
 
 
 @router.get("/depots/{depot_id}", response_model=schemas.DepotRead)
@@ -154,8 +184,12 @@ def create_price(price_in: schemas.PriceCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/prices", response_model=list[schemas.PriceRead])
-def list_prices(db: Session = Depends(get_db)):
-    return crud.list_prices(db)
+def list_prices(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return crud.list_prices(db, skip=skip, limit=limit)
 
 
 @router.get("/prices/{price_id}", response_model=schemas.PriceRead)

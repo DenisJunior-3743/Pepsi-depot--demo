@@ -44,6 +44,29 @@ Responses:
 - `200 OK` — returns the role
 - `404 Not Found` — no role with that ID
 
+### Update role
+`PUT /admin/roles/{role_id}`
+
+Request body:
+```json
+{
+  "name": "Depot Supervisor"
+}
+```
+
+Responses:
+- `200 OK` — returns the updated role
+- `404 Not Found` — no role with that ID
+- `409 Conflict` — another role already has that `name`
+
+### Delete role
+`DELETE /admin/roles/{role_id}`
+
+Responses:
+- `204 No Content` — role deleted
+- `404 Not Found` — no role with that ID
+- `409 Conflict` — role is still assigned to one or more users (delete/reassign those users first)
+
 ---
 
 ## Users
@@ -87,6 +110,32 @@ Responses:
 `GET /admin/users/{user_id}`
 
 - `200 OK` — returns the user
+- `404 Not Found` — no user with that ID
+
+### Update user
+`PUT /admin/users/{user_id}`
+
+Request body (full replace, same shape as register):
+```json
+{
+  "role_id": 1,
+  "name": "John Mwangi",
+  "gender": "Male",
+  "contact": "0711223344",
+  "salary": 48000
+}
+```
+
+Responses:
+- `200 OK` — returns the updated user
+- `404 Not Found` — no user with that ID, or `role_id` does not reference an existing role
+- `422 Unprocessable Entity` — validation failure
+
+### Delete user
+`DELETE /admin/users/{user_id}`
+
+Responses:
+- `204 No Content` — user deleted
 - `404 Not Found` — no user with that ID
 
 ---

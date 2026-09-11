@@ -50,7 +50,7 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
 
 @router.post("/personnel", response_model=schemas.PersonnelRead, status_code=status.HTTP_201_CREATED)
 def register_personnel(personnel_in: schemas.PersonnelCreate, db: Session = Depends(get_db)):
-    if crud.get_role(db, personnel_in.role_id) is None:
+    if personnel_in.role_id is not None and crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
     return crud.create_personnel(db, personnel_in)
 
@@ -73,7 +73,7 @@ def update_personnel(personnel_id: int, personnel_in: schemas.PersonnelCreate, d
     personnel = crud.get_personnel(db, personnel_id)
     if personnel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
-    if crud.get_role(db, personnel_in.role_id) is None:
+    if personnel_in.role_id is not None and crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
     return crud.update_personnel(db, personnel, personnel_in)
 

@@ -78,6 +78,13 @@ def delete_personnel(db: Session, personnel: models.Personnel) -> None:
     db.commit()
 
 
+def assign_personnel_role(db: Session, personnel: models.Personnel, role_id: int) -> models.Personnel:
+    personnel.role_id = role_id
+    db.commit()
+    db.refresh(personnel)
+    return personnel
+
+
 def create_product(db: Session, product_in: schemas.ProductCreate) -> models.Product:
     product = models.Product(name=product_in.name)
     db.add(product)

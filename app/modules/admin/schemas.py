@@ -37,6 +37,10 @@ class PersonnelRead(BaseModel):
     created_at: datetime
 
 
+class PersonnelRoleAssign(BaseModel):
+    role_id: int
+
+
 class ProductCreate(BaseModel):
     name: str = Field(min_length=2, max_length=100)
 

@@ -86,6 +86,16 @@ def delete_personnel(personnel_id: int, db: Session = Depends(get_db)):
     crud.delete_personnel(db, personnel)
 
 
+@router.patch("/personnel/{personnel_id}/role", response_model=schemas.PersonnelRead)
+def assign_personnel_role(personnel_id: int, role_in: schemas.PersonnelRoleAssign, db: Session = Depends(get_db)):
+    personnel = crud.get_personnel(db, personnel_id)
+    if personnel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
+    if crud.get_role(db, role_in.role_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    return crud.assign_personnel_role(db, personnel, role_in.role_id)
+
+
 @router.post("/products", response_model=schemas.ProductRead, status_code=status.HTTP_201_CREATED)
 def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_db)):
     if crud.get_product_by_name(db, product_in.name):

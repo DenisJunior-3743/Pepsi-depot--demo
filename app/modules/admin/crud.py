@@ -110,7 +110,7 @@ def get_quantity(db: Session, quantity_id: int) -> models.Quantity | None:
     return db.get(models.Quantity, quantity_id)
 
 
-def get_quantity_by_value(db: Session, value: int) -> models.Quantity | None:
+def get_quantity_by_value(db: Session, value: str) -> models.Quantity | None:
     return db.scalar(select(models.Quantity).where(models.Quantity.quantity == value))
 
 

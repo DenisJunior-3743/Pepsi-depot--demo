@@ -1,17 +1,10 @@
 from datetime import datetime
-from enum import Enum
 
-from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.modules.admin.models import Depot, Personnel, Product
+from app.modules.admin.models import Product, Quantity
 from app.db.session import Base
-
-
-class SupplyStatus(str, Enum):
-    DISPATCHED = "DISPATCHED"
-    RECEIVED = "RECEIVED"
-    CANCELLED = "CANCELLED"
 
 
 class ProductionRecord(Base):
@@ -22,17 +15,15 @@ class ProductionRecord(Base):
     quantity_produced: Mapped[int] = mapped_column(Integer, nullable=False)
     production_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     created_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    recorded_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("personnel.id"), nullable=True)
     product: Mapped[Product] = relationship()
-    recorded_by: Mapped[Personnel | None] = relationship(foreign_keys=[recorded_by_user_id])
 
     @property
     def product_name(self) -> str:
         return self.product.name
 
 
-class FactoryStock(Base):
-    __tablename__ = "factory_stock"
+class FactoryCurrentStock(Base):
+    __tablename__ = "factory_current_stock"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, unique=True, index=True)
@@ -45,35 +36,19 @@ class FactoryStock(Base):
         return self.product.name
 
 
-class Supply(Base):
-    __tablename__ = "supplies"
+class SupplyHistory(Base):
+    __tablename__ = "supply_history"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    destination_depot_id: Mapped[int] = mapped_column(ForeignKey("depots.id"), nullable=False, index=True)
-    dispatched_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("personnel.id"), nullable=True)
-    status: Mapped[SupplyStatus] = mapped_column(SqlEnum(SupplyStatus), default=SupplyStatus.DISPATCHED, nullable=False)
-    supply_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    created_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    items: Mapped[list["SupplyItem"]] = relationship(back_populates="supply", cascade="all, delete-orphan")
-    depot: Mapped[Depot] = relationship()
-    dispatched_by: Mapped[Personnel | None] = relationship(foreign_keys=[dispatched_by_user_id])
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
+    quantity_id: Mapped[int] = mapped_column(ForeignKey("quantities.id"), nullable=False, index=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    product: Mapped[Product] = relationship()
+    quantity_record: Mapped[Quantity] = relationship()
 
     @property
-    def destination_depot_name(self) -> str:
-        return self.depot.name
-
-
-class SupplyItem(Base):
-    __tablename__ = "supply_items"
-    __table_args__ = (UniqueConstraint("supply_id", "product_id", name="uq_supply_product"),)
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    supply_id: Mapped[int] = mapped_column(ForeignKey("supplies.id"), nullable=False, index=True)
-    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
-    quantity_supplied: Mapped[int] = mapped_column(Integer, nullable=False)
-    quantity_received: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    supply: Mapped[Supply] = relationship(back_populates="items")
-    product: Mapped[Product] = relationship()
+    def quantity_value(self) -> str:
+        return self.quantity_record.quantity
 
     @property
     def product_name(self) -> str:

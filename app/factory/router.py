@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.factory.models import FactoryStock
+from app.factory.models import FactoryCurrentStock
 from app.factory.schemas import FactoryStockResponse, ProductionCreate, ProductionResponse, SupplyCreate, SupplyResponse
 from app.factory.services import create_supply, get_production, get_stock, get_supply, list_production, list_supplies, record_production
 
@@ -42,7 +42,7 @@ def read_factory_supply(supply_id: int, db: Session = Depends(get_db)):
 
 @router.get("/stock", response_model=list[FactoryStockResponse])
 def list_factory_stock(db: Session = Depends(get_db)):
-    return list(db.scalars(select(FactoryStock).options(selectinload(FactoryStock.product)).order_by(FactoryStock.product_id)))
+    return list(db.scalars(select(FactoryCurrentStock).options(selectinload(FactoryCurrentStock.product)).order_by(FactoryCurrentStock.product_id)))
 
 
 @router.get("/stock/{product_id}", response_model=FactoryStockResponse)

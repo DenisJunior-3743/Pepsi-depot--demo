@@ -28,8 +28,9 @@ def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
     user = models.User(
         role_id=user_in.role_id,
         name=user_in.name,
+        gender=user_in.gender,
         contact=user_in.contact,
-        email=user_in.email,
+        salary=user_in.salary,
     )
     db.add(user)
     db.commit()
@@ -41,31 +42,5 @@ def get_user(db: Session, user_id: int) -> models.User | None:
     return db.get(models.User, user_id)
 
 
-def get_user_by_email(db: Session, email: str) -> models.User | None:
-    return db.scalar(select(models.User).where(models.User.email == email))
-
-
 def list_users(db: Session) -> list[models.User]:
     return list(db.scalars(select(models.User).order_by(models.User.id)))
-
-
-def create_personnel(db: Session, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
-    personnel = models.Personnel(
-        role_id=personnel_in.role_id,
-        name=personnel_in.name,
-        gender=personnel_in.gender,
-        contact=personnel_in.contact,
-        salary=personnel_in.salary,
-    )
-    db.add(personnel)
-    db.commit()
-    db.refresh(personnel)
-    return personnel
-
-
-def get_personnel(db: Session, personnel_id: int) -> models.Personnel | None:
-    return db.get(models.Personnel, personnel_id)
-
-
-def list_personnel(db: Session) -> list[models.Personnel]:
-    return list(db.scalars(select(models.Personnel).order_by(models.Personnel.id)))

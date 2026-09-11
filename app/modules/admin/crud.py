@@ -4,6 +4,10 @@ from sqlalchemy.orm import Session
 from app.modules.admin import models, schemas
 
 
+def _count(db: Session, model) -> int:
+    return db.scalar(select(func.count()).select_from(model)) or 0
+
+
 def create_role(db: Session, role_in: schemas.RoleCreate) -> models.Role:
     role = models.Role(name=role_in.name)
     db.add(role)
@@ -22,6 +26,10 @@ def get_role_by_name(db: Session, name: str) -> models.Role | None:
 
 def list_roles(db: Session, skip: int = 0, limit: int = 10) -> list[models.Role]:
     return list(db.scalars(select(models.Role).order_by(models.Role.id).offset(skip).limit(limit)))
+
+
+def count_roles(db: Session) -> int:
+    return _count(db, models.Role)
 
 
 def update_role(db: Session, role: models.Role, role_in: schemas.RoleCreate) -> models.Role:
@@ -60,6 +68,10 @@ def get_personnel(db: Session, personnel_id: int) -> models.Personnel | None:
 
 def list_personnel(db: Session, skip: int = 0, limit: int = 10) -> list[models.Personnel]:
     return list(db.scalars(select(models.Personnel).order_by(models.Personnel.id).offset(skip).limit(limit)))
+
+
+def count_personnel(db: Session) -> int:
+    return _count(db, models.Personnel)
 
 
 def update_personnel(db: Session, personnel: models.Personnel, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
@@ -105,6 +117,10 @@ def list_products(db: Session, skip: int = 0, limit: int = 10) -> list[models.Pr
     return list(db.scalars(select(models.Product).order_by(models.Product.id).offset(skip).limit(limit)))
 
 
+def count_products(db: Session) -> int:
+    return _count(db, models.Product)
+
+
 def create_quantity(db: Session, quantity_in: schemas.QuantityCreate) -> models.Quantity:
     quantity = models.Quantity(quantity=quantity_in.quantity)
     db.add(quantity)
@@ -123,6 +139,10 @@ def get_quantity_by_value(db: Session, value: str) -> models.Quantity | None:
 
 def list_quantities(db: Session, skip: int = 0, limit: int = 10) -> list[models.Quantity]:
     return list(db.scalars(select(models.Quantity).order_by(models.Quantity.id).offset(skip).limit(limit)))
+
+
+def count_quantities(db: Session) -> int:
+    return _count(db, models.Quantity)
 
 
 def create_depot(db: Session, depot_in: schemas.DepotCreate) -> models.Depot:
@@ -145,6 +165,10 @@ def list_depots(db: Session, skip: int = 0, limit: int = 10) -> list[models.Depo
     return list(db.scalars(select(models.Depot).order_by(models.Depot.id).offset(skip).limit(limit)))
 
 
+def count_depots(db: Session) -> int:
+    return _count(db, models.Depot)
+
+
 def create_price(db: Session, price_in: schemas.PriceCreate) -> models.Price:
     price = models.Price(
         quantity_id=price_in.quantity_id,
@@ -162,3 +186,7 @@ def get_price(db: Session, price_id: int) -> models.Price | None:
 
 def list_prices(db: Session, skip: int = 0, limit: int = 10) -> list[models.Price]:
     return list(db.scalars(select(models.Price).order_by(models.Price.id).offset(skip).limit(limit)))
+
+
+def count_prices(db: Session) -> int:
+    return _count(db, models.Price)

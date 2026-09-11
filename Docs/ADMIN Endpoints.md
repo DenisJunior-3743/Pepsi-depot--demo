@@ -10,6 +10,17 @@ Every `GET` list endpoint (roles, personnel, products, quantities, depots, price
 - `skip` (default `0`) — number of records to skip
 - `limit` (default `10`, max `100`) — number of records to return
 
+Response shape (instead of a plain array):
+```json
+{
+  "items": [ /* the page of records */ ],
+  "total": 37,
+  "skip": 0,
+  "limit": 10
+}
+```
+`total` is the full count of records regardless of page size, so you can tell how many pages there are.
+
 Example: `GET /admin/personnel?skip=10&limit=10` returns the second page of 10.
 
 ## Roles
@@ -37,7 +48,7 @@ Responses:
 ### List roles
 `GET /admin/roles`
 
-- `200 OK` — returns an array of roles
+- `200 OK` — returns a paginated list of roles (see Pagination above)
 
 ### Get role by ID
 `GET /admin/roles/{role_id}`
@@ -86,6 +97,8 @@ Request body:
 }
 ```
 
+`role_id` and `salary` are optional — personnel can be registered before a role/salary is assigned.
+
 Responses:
 - `201 Created` — returns the created personnel record
 ```json
@@ -105,7 +118,7 @@ Responses:
 ### List personnel
 `GET /admin/personnel`
 
-- `200 OK` — returns an array of personnel records
+- `200 OK` — returns a paginated list of personnel records (see Pagination above)
 
 ### Get personnel by ID
 `GET /admin/personnel/{personnel_id}`
@@ -182,7 +195,7 @@ Responses:
 ### List products
 `GET /admin/products`
 
-- `200 OK` — returns an array of products
+- `200 OK` — returns a paginated list of products (see Pagination above)
 
 ### Get product by ID
 `GET /admin/products/{product_id}`
@@ -200,7 +213,7 @@ Responses:
 Request body:
 ```json
 {
-  "quantity": 24
+  "quantity": "24"
 }
 ```
 
@@ -209,16 +222,16 @@ Responses:
 ```json
 {
   "id": 1,
-  "quantity": 24
+  "quantity": "24"
 }
 ```
 - `409 Conflict` — that `quantity` value already exists
-- `422 Unprocessable Entity` — `quantity` not greater than 0
+- `422 Unprocessable Entity` — `quantity` is empty or too long
 
 ### List quantities
 `GET /admin/quantities`
 
-- `200 OK` — returns an array of quantities
+- `200 OK` — returns a paginated list of quantities (see Pagination above)
 
 ### Get quantity by ID
 `GET /admin/quantities/{quantity_id}`
@@ -255,7 +268,7 @@ Responses:
 ### List depots
 `GET /admin/depots`
 
-- `200 OK` — returns an array of depots
+- `200 OK` — returns a paginated list of depots (see Pagination above)
 
 ### Get depot by ID
 `GET /admin/depots/{depot_id}`
@@ -295,7 +308,7 @@ Responses:
 ### List prices
 `GET /admin/prices`
 
-- `200 OK` — returns an array of prices
+- `200 OK` — returns a paginated list of prices (see Pagination above)
 
 ### Get price by ID
 `GET /admin/prices/{price_id}`

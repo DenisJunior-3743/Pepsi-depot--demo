@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.modules.admin.models import Gender
+
 
 class RoleCreate(BaseModel):
     name: str = Field(min_length=2, max_length=50)
@@ -18,7 +20,7 @@ class RoleRead(BaseModel):
 class PersonnelCreate(BaseModel):
     role_id: int
     name: str = Field(min_length=2, max_length=150)
-    gender: str = Field(min_length=1, max_length=10)
+    gender: Gender
     contact: str = Field(min_length=7, max_length=20)
     salary: Decimal = Field(gt=0)
 
@@ -29,7 +31,7 @@ class PersonnelRead(BaseModel):
     id: int
     role_id: int
     name: str
-    gender: str
+    gender: Gender
     contact: str
     salary: Decimal
     created_at: datetime
@@ -47,14 +49,14 @@ class ProductRead(BaseModel):
 
 
 class QuantityCreate(BaseModel):
-    quantity: int = Field(gt=0)
+    quantity: str = Field(min_length=1, max_length=50)
 
 
 class QuantityRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    quantity: int
+    quantity: str
 
 
 class DepotCreate(BaseModel):

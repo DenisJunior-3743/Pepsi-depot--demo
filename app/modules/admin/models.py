@@ -1,9 +1,16 @@
+import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Numeric, String
+from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+
+
+class Gender(str, enum.Enum):
+    male = "Male"
+    female = "Female"
 
 
 class Role(Base):
@@ -21,7 +28,10 @@ class Personnel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
-    gender: Mapped[str] = mapped_column(String(10), nullable=False)
+    gender: Mapped[Gender] = mapped_column(
+        SqlEnum(Gender, name="gender_enum", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=False,
+    )
     contact: Mapped[str] = mapped_column(String(20), nullable=False)
     salary: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -40,7 +50,7 @@ class Quantity(Base):
     __tablename__ = "quantities"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    quantity: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    quantity: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
 
 class Depot(Base):

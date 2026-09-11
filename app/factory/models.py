@@ -4,7 +4,7 @@ from enum import Enum
 from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.admin_models import Depot, Personnel, Product
+from app.modules.admin.models import Depot, Personnel, Product
 from app.db.session import Base
 
 

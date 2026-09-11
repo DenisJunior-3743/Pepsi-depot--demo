@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db.admin_models import Depot, Personnel, Product
+from app.modules.admin.models import Depot, Personnel, Product
 from app.factory.models import FactoryStock, ProductionRecord, Supply, SupplyItem
 from app.factory.schemas import ProductionCreate, SupplyCreate
 

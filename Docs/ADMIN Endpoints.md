@@ -4,6 +4,14 @@ Base URL prefix: `/admin`
 
 All request/response bodies are JSON. Interactive docs are available at `/docs` when the server is running.
 
+### Pagination
+
+Every `GET` list endpoint (roles, personnel, products, quantities, depots, prices) accepts:
+- `skip` (default `0`) — number of records to skip
+- `limit` (default `10`, max `100`) — number of records to return
+
+Example: `GET /admin/personnel?skip=10&limit=10` returns the second page of 10.
+
 ## Roles
 
 ### Create role

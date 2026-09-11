@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 
 from app.core.config import settings
+from app.modules.admin.router import router as admin_router
 
 app = FastAPI(title="Pepsi Depo Management ERP")
+
+app.include_router(admin_router)
 
 
 @app.get("/")

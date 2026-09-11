@@ -2,6 +2,7 @@ venv/
 __pycache__/
 *.pyc
 .env
+DATABASE_SETUP.md
 .vscode/
 .idea/
 *.db

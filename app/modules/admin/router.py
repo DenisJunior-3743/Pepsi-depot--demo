@@ -47,3 +47,23 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
+
+
+@router.post("/personnel", response_model=schemas.PersonnelRead, status_code=status.HTTP_201_CREATED)
+def register_personnel(personnel_in: schemas.PersonnelCreate, db: Session = Depends(get_db)):
+    if crud.get_role(db, personnel_in.role_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    return crud.create_personnel(db, personnel_in)
+
+
+@router.get("/personnel", response_model=list[schemas.PersonnelRead])
+def list_personnel(db: Session = Depends(get_db)):
+    return crud.list_personnel(db)
+
+
+@router.get("/personnel/{personnel_id}", response_model=schemas.PersonnelRead)
+def get_personnel(personnel_id: int, db: Session = Depends(get_db)):
+    personnel = crud.get_personnel(db, personnel_id)
+    if personnel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
+    return personnel

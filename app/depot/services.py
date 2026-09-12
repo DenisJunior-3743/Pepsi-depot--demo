@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.depot.models import CurrentSales, CurrentStock, RestockHistory, RestockStatus, SalesHistory
 from app.depot.schemas import PagedResponse, RestockConfirm, RestockReject, RestockUpdate, SaleCreate, SaleUpdate
-from app.factory.models import SupplyHistory
+from app.factory.models import FactoryCurrentStock, SupplyHistory, SupplyStatus
 from app.modules.admin.models import Price, Product, Quantity
 
 _RESTOCK_OPTIONS = (
@@ -50,8 +50,29 @@ def _get_supply(db: Session, supply_history_id: int) -> SupplyHistory:
     return supply
 
 
+def _require_pending(supply: SupplyHistory) -> None:
+    if supply.status != SupplyStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Supply {supply.id} is already {supply.status.value}, cannot decide it again",
+        )
+
+
+def _restore_factory_stock(db: Session, supply: SupplyHistory) -> None:
+    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == supply.product_id).with_for_update())
+    if stock is not None:
+        stock.available_quantity += supply.amount
+
+
+def _deduct_factory_stock(db: Session, supply: SupplyHistory) -> None:
+    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == supply.product_id).with_for_update())
+    if stock is not None:
+        stock.available_quantity -= supply.amount
+
+
 def confirm_restock(db: Session, supply_history_id: int, data: RestockConfirm) -> RestockHistory:
     supply = _get_supply(db, supply_history_id)
+    _require_pending(supply)
     matched = data.quantity_received == supply.amount
     entry = RestockHistory(
         supply_history_id=supply.id,
@@ -64,6 +85,13 @@ def confirm_restock(db: Session, supply_history_id: int, data: RestockConfirm) -
         status=RestockStatus.confirmed if matched else RestockStatus.rejected,
         rejection_reason=None if matched else f"Quantity mismatch: expected {supply.amount}, received {data.quantity_received}",
     )
+    if matched:
+        supply.status = SupplyStatus.received
+        supply.rejection_reason = None
+    else:
+        supply.status = SupplyStatus.rejected
+        supply.rejection_reason = entry.rejection_reason
+        _restore_factory_stock(db, supply)
     try:
         db.add(entry)
         db.commit()
@@ -76,6 +104,7 @@ def confirm_restock(db: Session, supply_history_id: int, data: RestockConfirm) -
 
 def reject_restock(db: Session, supply_history_id: int, data: RestockReject) -> RestockHistory:
     supply = _get_supply(db, supply_history_id)
+    _require_pending(supply)
     entry = RestockHistory(
         supply_history_id=supply.id,
         depot_id=data.depot_id,
@@ -87,6 +116,9 @@ def reject_restock(db: Session, supply_history_id: int, data: RestockReject) -> 
         status=RestockStatus.rejected,
         rejection_reason=data.reason,
     )
+    supply.status = SupplyStatus.rejected
+    supply.rejection_reason = data.reason
+    _restore_factory_stock(db, supply)
     try:
         db.add(entry)
         db.commit()
@@ -146,6 +178,12 @@ def delete_restock_entry(db: Session, entry_id: int) -> None:
     entry = db.get(RestockHistory, entry_id)
     if entry is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restock entry not found")
+    supply = db.get(SupplyHistory, entry.supply_history_id)
+    if supply is not None and supply.status != SupplyStatus.pending:
+        if supply.status == SupplyStatus.rejected:
+            _deduct_factory_stock(db, supply)
+        supply.status = SupplyStatus.pending
+        supply.rejection_reason = None
     db.delete(entry)
     db.commit()
 

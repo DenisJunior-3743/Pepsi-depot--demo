@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.factory.models import FactoryCurrentStock
 from app.factory.schemas import FactoryStockResponse, ProductionCreate, ProductionResponse, SupplyCreate, SupplyResponse
 from app.factory.schemas import SupplyUpdate
-from app.factory.services import create_supply, delete_production, delete_supply, get_production, get_stock, get_supply, list_production, list_supplies, record_production, update_production, update_supply
+from app.factory.services import create_supply, delete_production, delete_supply, get_production, get_production_by_product, get_stock, get_supplies_by_product, get_supply, list_production, list_supplies, record_production, update_production, update_supply
 
 router = APIRouter(prefix="/factory", tags=["Factory"])
 
@@ -32,9 +32,9 @@ def read_production_history(
     return list_production(db, skip, limit, history_datetime, product_id, product_name, quantity)
 
 
-@router.get("/production/{production_id}", response_model=ProductionResponse)
-def read_production(production_id: int, db: Session = Depends(get_db)):
-    return get_production(db, production_id)
+@router.get("/production/{product_id}", response_model=list[ProductionResponse])
+def read_production_by_product(product_id: int, db: Session = Depends(get_db)):
+    return get_production_by_product(db, product_id)
 
 
 @router.put("/production/{production_id}", response_model=ProductionResponse)
@@ -66,9 +66,9 @@ def read_supply_history(
     return list_supplies(db, skip, limit, history_datetime, product_id, product_name, quantity)
 
 
-@router.get("/supplies/{supply_id}", response_model=SupplyResponse)
-def read_factory_supply(supply_id: int, db: Session = Depends(get_db)):
-    return get_supply(db, supply_id)
+@router.get("/supplies/{product_id}", response_model=list[SupplyResponse])
+def read_factory_supplies_by_product(product_id: int, db: Session = Depends(get_db)):
+    return get_supplies_by_product(db, product_id)
 
 
 @router.put("/supplies/{supply_id}", response_model=SupplyResponse)

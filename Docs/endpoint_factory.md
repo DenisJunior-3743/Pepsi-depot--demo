@@ -32,9 +32,9 @@ Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`),
 
 Update or delete a production record. Current factory stock is adjusted by the quantity change. Deletion returns `409 Conflict` if current stock cannot be reduced safely.
 
-### `GET /factory/production/{production_id}`
+### `GET /factory/production/{product_id}`
 
-Returns one production record. Returns `200 OK` or `404 Not Found`.
+Returns all production records for the product, ordered newest first. Returns `200 OK` with an empty array when no history exists for the product.
 
 Production responses contain `id`, `product_id`, `product_name`, `quantity_produced`, `production_date`, and `created_date`.
 
@@ -82,9 +82,9 @@ Returns SupplyHistory records ordered newest first. Returns `200 OK`.
 
 Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`), `date`, `product_id`, `product_name`, and `quantity`.
 
-### `GET /factory/supplies/{supply_id}`
+### `GET /factory/supplies/{product_id}`
 
-Returns one SupplyHistory record. Returns `200 OK` or `404 Not Found`.
+Returns all SupplyHistory records for the product, ordered newest first. Returns `200 OK` with an empty array when no history exists for the product.
 
 SupplyHistory responses contain `id`, `product_id`, `quantity_id`, `amount`, `product_name`, `quantity_value`, `status`, `rejection_reason`, and `created_date`. `status` is `pending`, `received`, or `rejected`.
 

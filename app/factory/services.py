@@ -116,11 +116,19 @@ def delete_supply(db: Session, supply: SupplyHistory) -> None:
     db.commit()
 
 
+def get_supplies_by_product(db: Session, product_id: int) -> list[SupplyHistory]:
+    return list(db.scalars(select(SupplyHistory).options(selectinload(SupplyHistory.product), selectinload(SupplyHistory.quantity_record)).where(SupplyHistory.product_id == product_id).order_by(SupplyHistory.created_date.desc())))
+
+
 def get_supply(db: Session, supply_id: int) -> SupplyHistory:
     supply = db.scalar(select(SupplyHistory).options(selectinload(SupplyHistory.product), selectinload(SupplyHistory.quantity_record)).where(SupplyHistory.id == supply_id))
     if supply is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supply not found")
     return supply
+
+
+def get_production_by_product(db: Session, product_id: int) -> list[ProductionRecord]:
+    return list(db.scalars(select(ProductionRecord).options(selectinload(ProductionRecord.product)).where(ProductionRecord.product_id == product_id).order_by(ProductionRecord.production_date.desc())))
 
 
 def get_production(db: Session, production_id: int) -> ProductionRecord:

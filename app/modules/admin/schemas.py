@@ -88,12 +88,11 @@ class DepotRead(BaseModel):
 
 class PriceCreate(BaseModel):
     quantity_id: int
-    amount: Decimal = Field(gt=0)
+    amount: int = Field(gt=0)
 
 
 class PriceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
     quantity_id: int
-    amount: Decimal
+    amount: int

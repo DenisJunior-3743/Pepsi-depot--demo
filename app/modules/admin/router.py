@@ -185,6 +185,8 @@ def get_depot(depot_id: int, db: Session = Depends(get_db)):
 def create_price(price_in: schemas.PriceCreate, db: Session = Depends(get_db)):
     if crud.get_quantity(db, price_in.quantity_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
+    if crud.get_price(db, price_in.quantity_id) is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Price already exists for this quantity")
     return crud.create_price(db, price_in)
 
 
@@ -198,9 +200,9 @@ def list_prices(
     return schemas.Page(items=items, total=crud.count_prices(db), page=page, page_size=page_size)
 
 
-@router.get("/prices/{price_id}", response_model=schemas.PriceRead)
-def get_price(price_id: int, db: Session = Depends(get_db)):
-    price = crud.get_price(db, price_id)
+@router.get("/prices/{quantity_id}", response_model=schemas.PriceRead)
+def get_price(quantity_id: int, db: Session = Depends(get_db)):
+    price = crud.get_price(db, quantity_id)
     if price is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price not found")
     return price

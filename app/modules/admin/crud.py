@@ -200,14 +200,14 @@ def create_price(db: Session, price_in: schemas.PriceCreate) -> models.Price:
     return price
 
 
-def get_price(db: Session, price_id: int) -> models.Price | None:
-    return db.get(models.Price, price_id)
+def get_price(db: Session, quantity_id: int) -> models.Price | None:
+    return db.get(models.Price, quantity_id)
 
 
 def list_prices(db: Session, page: int = 1, page_size: int = 10) -> list[models.Price]:
     return list(
         db.scalars(
-            select(models.Price).order_by(models.Price.id).offset((page - 1) * page_size).limit(page_size)
+            select(models.Price).order_by(models.Price.quantity_id).offset((page - 1) * page_size).limit(page_size)
         )
     )
 

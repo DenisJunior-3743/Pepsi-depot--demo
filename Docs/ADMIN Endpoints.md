@@ -280,7 +280,8 @@ Responses:
 
 ## Prices
 
-> Note: a price is tied only to a `quantity_id` (not a specific product).
+> Note: a price is tied only to a `quantity_id` (not a specific product). `quantity_id` is the
+> primary key of a price, so there can be at most one price per quantity.
 
 ### Create price
 `POST /admin/prices`
@@ -297,12 +298,12 @@ Responses:
 - `201 Created` — returns the created price
 ```json
 {
-  "id": 1,
   "quantity_id": 1,
-  "amount": "8500.00"
+  "amount": 8500
 }
 ```
 - `404 Not Found` — `quantity_id` does not reference an existing quantity
+- `409 Conflict` — a price already exists for this `quantity_id`
 - `422 Unprocessable Entity` — `amount` not greater than 0
 
 ### List prices
@@ -310,11 +311,11 @@ Responses:
 
 - `200 OK` — returns a paginated list of prices (see Pagination above)
 
-### Get price by ID
-`GET /admin/prices/{price_id}`
+### Get price by quantity ID
+`GET /admin/prices/{quantity_id}`
 
 - `200 OK` — returns the price
-- `404 Not Found` — no price with that ID
+- `404 Not Found` — no price for that quantity ID
 
 ---
 

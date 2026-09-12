@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -64,6 +64,5 @@ class Depot(Base):
 class Price(Base):
     __tablename__ = "prices"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    quantity_id: Mapped[int] = mapped_column(ForeignKey("quantities.id"), nullable=False)
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    quantity_id: Mapped[int] = mapped_column(ForeignKey("quantities.id"), primary_key=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)

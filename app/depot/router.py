@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
@@ -18,9 +20,19 @@ def reject_restock(supply_history_id: int, data: schemas.RestockReject, db: Sess
     return services.reject_restock(db, supply_history_id, data)
 
 
-@router.get("/restock", response_model=list[schemas.RestockResponse])
-def list_restock_history(depot_id: int | None = None, status_filter: RestockStatus | None = Query(default=None, alias="status"), db: Session = Depends(get_db)):
-    return services.list_restock_history(db, depot_id, status_filter)
+@router.get("/restock", response_model=schemas.PagedResponse[schemas.RestockResponse])
+def list_restock_history(
+    depot_id: int | None = None,
+    status_filter: RestockStatus | None = Query(default=None, alias="status"),
+    product_name: str | None = None,
+    quantity: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return services.list_restock_history(db, depot_id, status_filter, product_name, quantity, date_from, date_to, page, page_size)
 
 
 @router.get("/restock/{entry_id}", response_model=schemas.RestockResponse)
@@ -48,9 +60,18 @@ def record_sale(data: schemas.SaleCreate, db: Session = Depends(get_db)):
     return services.record_sale(db, data)
 
 
-@router.get("/sales", response_model=list[schemas.SaleResponse])
-def list_sales_history(depot_id: int | None = None, db: Session = Depends(get_db)):
-    return services.list_sales_history(db, depot_id)
+@router.get("/sales", response_model=schemas.PagedResponse[schemas.SaleResponse])
+def list_sales_history(
+    depot_id: int | None = None,
+    product_name: str | None = None,
+    quantity: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return services.list_sales_history(db, depot_id, product_name, quantity, date_from, date_to, page, page_size)
 
 
 @router.get("/sales/{sale_id}", response_model=schemas.SaleResponse)

@@ -1,14 +1,14 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.depot.models import CurrentSales, CurrentStock, RestockHistory, RestockStatus, SalesHistory
-from app.depot.schemas import RestockConfirm, RestockReject, RestockUpdate, SaleCreate, SaleUpdate
+from app.depot.schemas import PagedResponse, RestockConfirm, RestockReject, RestockUpdate, SaleCreate, SaleUpdate
 from app.factory.models import SupplyHistory
-from app.modules.admin.models import Price
+from app.modules.admin.models import Price, Product, Quantity
 
 _RESTOCK_OPTIONS = (
     selectinload(RestockHistory.depot),
@@ -34,6 +34,13 @@ _CURRENT_SALES_OPTIONS = (
 
 def _is_insufficient_stock(exc: DBAPIError) -> bool:
     return "insufficient_stock" in str(exc.orig).lower()
+
+
+def _paginate(db: Session, stmt, page: int, page_size: int) -> PagedResponse:
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    items = list(db.scalars(stmt.offset((page - 1) * page_size).limit(page_size)))
+    total_pages = (total + page_size - 1) // page_size if total else 0
+    return PagedResponse(items=items, total=total, page=page, page_size=page_size, total_pages=total_pages)
 
 
 def _get_supply(db: Session, supply_history_id: int) -> SupplyHistory:
@@ -90,13 +97,32 @@ def reject_restock(db: Session, supply_history_id: int, data: RestockReject) -> 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid depot, supplier, or confirming personnel reference")
 
 
-def list_restock_history(db: Session, depot_id: int | None = None, status_filter: RestockStatus | None = None) -> list[RestockHistory]:
+def list_restock_history(
+    db: Session,
+    depot_id: int | None = None,
+    status_filter: RestockStatus | None = None,
+    product_name: str | None = None,
+    quantity: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    page: int = 1,
+    page_size: int = 10,
+) -> PagedResponse:
     stmt = select(RestockHistory).options(*_RESTOCK_OPTIONS)
     if depot_id is not None:
         stmt = stmt.where(RestockHistory.depot_id == depot_id)
     if status_filter is not None:
         stmt = stmt.where(RestockHistory.status == status_filter)
-    return list(db.scalars(stmt.order_by(RestockHistory.id.desc())))
+    if product_name is not None:
+        stmt = stmt.join(Product, RestockHistory.product_id == Product.id).where(Product.name.ilike(f"%{product_name}%"))
+    if quantity is not None:
+        stmt = stmt.join(Quantity, RestockHistory.quantity_id == Quantity.id).where(Quantity.quantity.ilike(f"%{quantity}%"))
+    if date_from is not None:
+        stmt = stmt.where(RestockHistory.restock_date >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(RestockHistory.restock_date < date_to + timedelta(days=1))
+    stmt = stmt.order_by(RestockHistory.id.desc())
+    return _paginate(db, stmt, page, page_size)
 
 
 def get_restock_entry(db: Session, entry_id: int) -> RestockHistory:
@@ -152,11 +178,29 @@ def record_sale(db: Session, data: SaleCreate) -> SalesHistory:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid depot, product, or quantity reference")
 
 
-def list_sales_history(db: Session, depot_id: int | None = None) -> list[SalesHistory]:
+def list_sales_history(
+    db: Session,
+    depot_id: int | None = None,
+    product_name: str | None = None,
+    quantity: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    page: int = 1,
+    page_size: int = 10,
+) -> PagedResponse:
     stmt = select(SalesHistory).options(*_SALE_OPTIONS)
     if depot_id is not None:
         stmt = stmt.where(SalesHistory.depot_id == depot_id)
-    return list(db.scalars(stmt.order_by(SalesHistory.id.desc())))
+    if product_name is not None:
+        stmt = stmt.join(Product, SalesHistory.product_id == Product.id).where(Product.name.ilike(f"%{product_name}%"))
+    if quantity is not None:
+        stmt = stmt.join(Quantity, SalesHistory.quantity_id == Quantity.id).where(Quantity.quantity.ilike(f"%{quantity}%"))
+    if date_from is not None:
+        stmt = stmt.where(SalesHistory.sale_date >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(SalesHistory.sale_date <= date_to)
+    stmt = stmt.order_by(SalesHistory.id.desc())
+    return _paginate(db, stmt, page, page_size)
 
 
 def get_sale(db: Session, sale_id: int) -> SalesHistory:

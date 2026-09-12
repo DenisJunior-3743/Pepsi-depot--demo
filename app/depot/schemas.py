@@ -1,8 +1,19 @@
 from datetime import date, datetime, time
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.depot.models import RestockStatus
+
+T = TypeVar("T")
+
+
+class PagedResponse(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 class RestockConfirm(BaseModel):

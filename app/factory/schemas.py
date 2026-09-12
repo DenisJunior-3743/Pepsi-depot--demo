@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.factory.models import SupplyStatus
+
 class ProductionCreate(BaseModel):
     product_id: int = Field(gt=0)
     quantity_produced: int = Field(gt=0)
@@ -35,6 +37,11 @@ class SupplyCreate(BaseModel):
     amount: int = Field(gt=0)
 
 
+class SupplyUpdate(BaseModel):
+    status: SupplyStatus
+    rejection_reason: str | None = Field(default=None, min_length=1)
+
+
 class SupplyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -44,3 +51,6 @@ class SupplyResponse(BaseModel):
     amount: int
     product_name: str
     quantity_value: str
+    status: SupplyStatus
+    rejection_reason: str | None
+    created_date: datetime

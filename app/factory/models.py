@@ -1,10 +1,18 @@
+import enum
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer
+from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.modules.admin.models import Product, Quantity
 from app.db.session import Base
+
+
+class SupplyStatus(str, enum.Enum):
+    pending = "pending"
+    received = "received"
+    rejected = "rejected"
 
 
 class ProductionRecord(Base):
@@ -43,6 +51,9 @@ class SupplyHistory(Base):
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
     quantity_id: Mapped[int] = mapped_column(ForeignKey("quantities.id"), nullable=False, index=True)
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[SupplyStatus] = mapped_column(SqlEnum(SupplyStatus), default=SupplyStatus.pending, nullable=False)
+    rejection_reason: Mapped[str | None] = mapped_column(nullable=True)
+    created_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     product: Mapped[Product] = relationship()
     quantity_record: Mapped[Quantity] = relationship()
 

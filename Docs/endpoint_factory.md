@@ -26,6 +26,12 @@ Request:
 
 Returns production history ordered newest first. Returns `200 OK`.
 
+Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`), `date`, `product_id`, `product_name`, and `quantity`.
+
+### `PUT /factory/production/{production_id}` and `DELETE /factory/production/{production_id}`
+
+Update or delete a production record. Current factory stock is adjusted by the quantity change. Deletion returns `409 Conflict` if current stock cannot be reduced safely.
+
 ### `GET /factory/production/{production_id}`
 
 Returns one production record. Returns `200 OK` or `404 Not Found`.
@@ -74,11 +80,17 @@ The request returns `409 Conflict` when available stock is less than `amount`. I
 
 Returns SupplyHistory records ordered newest first. Returns `200 OK`.
 
+Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`), `date`, `product_id`, `product_name`, and `quantity`.
+
 ### `GET /factory/supplies/{supply_id}`
 
 Returns one SupplyHistory record. Returns `200 OK` or `404 Not Found`.
 
-SupplyHistory responses contain `id`, `product_id`, `quantity_id`, `amount`, `product_name`, and `quantity_value`.
+SupplyHistory responses contain `id`, `product_id`, `quantity_id`, `amount`, `product_name`, `quantity_value`, `status`, `rejection_reason`, and `created_date`. `status` is `pending`, `received`, or `rejected`.
+
+### `PUT /factory/supplies/{supply_id}` and `DELETE /factory/supplies/{supply_id}`
+
+Update or delete a supply record. A rejected supply must include `rejection_reason`. Rejecting or deleting a pending supply releases its reserved amount back to factory stock.
 
 ## Database Tables
 

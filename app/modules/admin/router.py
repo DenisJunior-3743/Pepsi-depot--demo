@@ -181,6 +181,25 @@ def get_depot(depot_id: int, db: Session = Depends(get_db)):
     return depot
 
 
+@router.put("/depots/{depot_id}", response_model=schemas.DepotRead)
+def update_depot(depot_id: int, depot_in: schemas.DepotCreate, db: Session = Depends(get_db)):
+    depot = crud.get_depot(db, depot_id)
+    if depot is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
+    existing = crud.get_depot_by_name(db, depot_in.name)
+    if existing and existing.id != depot_id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Depot already exists")
+    return crud.update_depot(db, depot, depot_in)
+
+
+@router.delete("/depots/{depot_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_depot(depot_id: int, db: Session = Depends(get_db)):
+    depot = crud.get_depot(db, depot_id)
+    if depot is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
+    crud.delete_depot(db, depot)
+
+
 @router.post("/prices", response_model=schemas.PriceRead, status_code=status.HTTP_201_CREATED)
 def create_price(price_in: schemas.PriceCreate, db: Session = Depends(get_db)):
     if crud.get_quantity(db, price_in.quantity_id) is None:
@@ -206,3 +225,19 @@ def get_price(quantity_id: int, db: Session = Depends(get_db)):
     if price is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price not found")
     return price
+
+
+@router.put("/prices/{quantity_id}", response_model=schemas.PriceRead)
+def update_price(quantity_id: int, price_in: schemas.PriceUpdate, db: Session = Depends(get_db)):
+    price = crud.get_price(db, quantity_id)
+    if price is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price not found")
+    return crud.update_price(db, price, price_in)
+
+
+@router.delete("/prices/{quantity_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_price(quantity_id: int, db: Session = Depends(get_db)):
+    price = crud.get_price(db, quantity_id)
+    if price is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Price not found")
+    crud.delete_price(db, price)

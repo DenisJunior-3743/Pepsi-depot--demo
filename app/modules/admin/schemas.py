@@ -91,6 +91,10 @@ class PriceCreate(BaseModel):
     amount: int = Field(gt=0)
 
 
+class PriceUpdate(BaseModel):
+    amount: int = Field(gt=0)
+
+
 class PriceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

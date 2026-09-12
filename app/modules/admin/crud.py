@@ -189,6 +189,19 @@ def count_depots(db: Session) -> int:
     return _count(db, models.Depot)
 
 
+def update_depot(db: Session, depot: models.Depot, depot_in: schemas.DepotCreate) -> models.Depot:
+    depot.name = depot_in.name
+    depot.location = depot_in.location
+    db.commit()
+    db.refresh(depot)
+    return depot
+
+
+def delete_depot(db: Session, depot: models.Depot) -> None:
+    db.delete(depot)
+    db.commit()
+
+
 def create_price(db: Session, price_in: schemas.PriceCreate) -> models.Price:
     price = models.Price(
         quantity_id=price_in.quantity_id,
@@ -214,3 +227,15 @@ def list_prices(db: Session, page: int = 1, page_size: int = 10) -> list[models.
 
 def count_prices(db: Session) -> int:
     return _count(db, models.Price)
+
+
+def update_price(db: Session, price: models.Price, price_in: schemas.PriceUpdate) -> models.Price:
+    price.amount = price_in.amount
+    db.commit()
+    db.refresh(price)
+    return price
+
+
+def delete_price(db: Session, price: models.Price) -> None:
+    db.delete(price)
+    db.commit()

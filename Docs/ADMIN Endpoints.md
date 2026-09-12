@@ -276,6 +276,29 @@ Responses:
 - `200 OK` — returns the depot
 - `404 Not Found` — no depot with that ID
 
+### Update depot
+`PUT /admin/depots/{depot_id}`
+
+Request body:
+```json
+{
+  "name": "Kampala Depot",
+  "location": "Kampala Industrial Area, Plot 12"
+}
+```
+
+Responses:
+- `200 OK` — returns the updated depot
+- `404 Not Found` — no depot with that ID
+- `409 Conflict` — another depot already has that `name`
+
+### Delete depot
+`DELETE /admin/depots/{depot_id}`
+
+Responses:
+- `204 No Content` — depot deleted
+- `404 Not Found` — no depot with that ID
+
 ---
 
 ## Prices
@@ -317,9 +340,33 @@ Responses:
 - `200 OK` — returns the price
 - `404 Not Found` — no price for that quantity ID
 
+### Update price
+`PUT /admin/prices/{quantity_id}`
+
+`quantity_id` can't be changed on an existing price — only `amount`.
+
+Request body:
+```json
+{
+  "amount": 9000
+}
+```
+
+Responses:
+- `200 OK` — returns the updated price
+- `404 Not Found` — no price for that quantity ID
+- `422 Unprocessable Entity` — `amount` not greater than 0
+
+### Delete price
+`DELETE /admin/prices/{quantity_id}`
+
+Responses:
+- `204 No Content` — price deleted
+- `404 Not Found` — no price for that quantity ID
+
 ---
 
 ## Not yet implemented
 
 These are part of the admin scope but not built yet:
-- PUT/DELETE for products, quantities, depots, prices
+- PUT/DELETE for products, quantities

@@ -92,13 +92,14 @@ Request body:
   "role_id": 1,
   "depot_id": 1,
   "name": "John Mwangi",
+  "email": "john.mwangi@example.com",
   "gender": "Male",
   "contact": "0711223344",
   "salary": 45000
 }
 ```
 
-`role_id`, `depot_id` and `salary` are optional — personnel can be registered before a role/depot/salary is assigned.
+`role_id`, `depot_id`, `email` and `salary` are optional — personnel can be registered before a role/depot/email/salary is assigned.
 
 Responses:
 - `201 Created` — returns the created personnel record
@@ -108,6 +109,7 @@ Responses:
   "role_id": 1,
   "depot_id": 1,
   "name": "John Mwangi",
+  "email": "john.mwangi@example.com",
   "gender": "Male",
   "contact": "0711223344",
   "salary": "45000.00",
@@ -115,7 +117,7 @@ Responses:
 }
 ```
 - `404 Not Found` — `role_id` does not reference an existing role, or `depot_id` does not reference an existing depot
-- `422 Unprocessable Entity` — validation failure (e.g. `salary` not greater than 0, `name`/`contact` too short)
+- `422 Unprocessable Entity` — validation failure (e.g. `salary` not greater than 0, `name`/`contact` too short, `email` not a valid address)
 
 ### List personnel
 `GET /admin/personnel`
@@ -137,6 +139,7 @@ Request body (full replace, same shape as register):
   "role_id": 1,
   "depot_id": 1,
   "name": "John Mwangi",
+  "email": "john.mwangi@example.com",
   "gender": "Male",
   "contact": "0711223344",
   "salary": 48000

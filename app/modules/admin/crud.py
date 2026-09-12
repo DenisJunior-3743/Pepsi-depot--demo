@@ -61,6 +61,7 @@ def create_personnel(db: Session, personnel_in: schemas.PersonnelCreate) -> mode
         role_id=personnel_in.role_id,
         depot_id=personnel_in.depot_id,
         name=personnel_in.name,
+        email=personnel_in.email,
         gender=personnel_in.gender,
         contact=personnel_in.contact,
         salary=personnel_in.salary,
@@ -91,6 +92,7 @@ def update_personnel(db: Session, personnel: models.Personnel, personnel_in: sch
     personnel.role_id = personnel_in.role_id
     personnel.depot_id = personnel_in.depot_id
     personnel.name = personnel_in.name
+    personnel.email = personnel_in.email
     personnel.gender = personnel_in.gender
     personnel.contact = personnel_in.contact
     personnel.salary = personnel_in.salary

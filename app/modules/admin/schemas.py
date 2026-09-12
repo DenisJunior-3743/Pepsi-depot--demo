@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.modules.admin.models import Gender
 
@@ -31,6 +31,7 @@ class PersonnelCreate(BaseModel):
     role_id: int | None = None
     depot_id: int | None = None
     name: str = Field(min_length=2, max_length=150)
+    email: EmailStr | None = None
     gender: Gender
     contact: str = Field(min_length=7, max_length=20)
     salary: Decimal | None = Field(default=None, gt=0)
@@ -43,6 +44,7 @@ class PersonnelRead(BaseModel):
     role_id: int | None
     depot_id: int | None
     name: str
+    email: EmailStr | None
     gender: Gender
     contact: str
     salary: Decimal | None

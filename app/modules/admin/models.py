@@ -29,6 +29,7 @@ class Personnel(Base):
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=True)
     depot_id: Mapped[int] = mapped_column(ForeignKey("depots.id"), nullable=True)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=True)
     gender: Mapped[Gender] = mapped_column(
         SqlEnum(Gender, name="gender_enum", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
         nullable=False,

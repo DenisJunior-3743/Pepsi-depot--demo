@@ -24,8 +24,12 @@ def get_role_by_name(db: Session, name: str) -> models.Role | None:
     return db.scalar(select(models.Role).where(models.Role.name == name))
 
 
-def list_roles(db: Session, skip: int = 0, limit: int = 10) -> list[models.Role]:
-    return list(db.scalars(select(models.Role).order_by(models.Role.id).offset(skip).limit(limit)))
+def list_roles(db: Session, page: int = 1, page_size: int = 10) -> list[models.Role]:
+    return list(
+        db.scalars(
+            select(models.Role).order_by(models.Role.id).offset((page - 1) * page_size).limit(page_size)
+        )
+    )
 
 
 def count_roles(db: Session) -> int:
@@ -66,8 +70,12 @@ def get_personnel(db: Session, personnel_id: int) -> models.Personnel | None:
     return db.get(models.Personnel, personnel_id)
 
 
-def list_personnel(db: Session, skip: int = 0, limit: int = 10) -> list[models.Personnel]:
-    return list(db.scalars(select(models.Personnel).order_by(models.Personnel.id).offset(skip).limit(limit)))
+def paged_list_personnel(db: Session, page: int = 1, page_size: int = 10) -> list[models.Personnel]:
+    return list(
+        db.scalars(
+            select(models.Personnel).order_by(models.Personnel.id).offset((page - 1) * page_size).limit(page_size)
+        )
+    )
 
 
 def count_personnel(db: Session) -> int:
@@ -113,8 +121,12 @@ def get_product_by_name(db: Session, name: str) -> models.Product | None:
     return db.scalar(select(models.Product).where(models.Product.name == name))
 
 
-def list_products(db: Session, skip: int = 0, limit: int = 10) -> list[models.Product]:
-    return list(db.scalars(select(models.Product).order_by(models.Product.id).offset(skip).limit(limit)))
+def list_products(db: Session, page: int = 1, page_size: int = 10) -> list[models.Product]:
+    return list(
+        db.scalars(
+            select(models.Product).order_by(models.Product.id).offset((page - 1) * page_size).limit(page_size)
+        )
+    )
 
 
 def count_products(db: Session) -> int:
@@ -137,8 +149,12 @@ def get_quantity_by_value(db: Session, value: str) -> models.Quantity | None:
     return db.scalar(select(models.Quantity).where(models.Quantity.quantity == value))
 
 
-def list_quantities(db: Session, skip: int = 0, limit: int = 10) -> list[models.Quantity]:
-    return list(db.scalars(select(models.Quantity).order_by(models.Quantity.id).offset(skip).limit(limit)))
+def list_quantities(db: Session, page: int = 1, page_size: int = 10) -> list[models.Quantity]:
+    return list(
+        db.scalars(
+            select(models.Quantity).order_by(models.Quantity.id).offset((page - 1) * page_size).limit(page_size)
+        )
+    )
 
 
 def count_quantities(db: Session) -> int:
@@ -161,8 +177,12 @@ def get_depot_by_name(db: Session, name: str) -> models.Depot | None:
     return db.scalar(select(models.Depot).where(models.Depot.name == name))
 
 
-def list_depots(db: Session, skip: int = 0, limit: int = 10) -> list[models.Depot]:
-    return list(db.scalars(select(models.Depot).order_by(models.Depot.id).offset(skip).limit(limit)))
+def list_depots(db: Session, page: int = 1, page_size: int = 10) -> list[models.Depot]:
+    return list(
+        db.scalars(
+            select(models.Depot).order_by(models.Depot.id).offset((page - 1) * page_size).limit(page_size)
+        )
+    )
 
 
 def count_depots(db: Session) -> int:
@@ -184,8 +204,12 @@ def get_price(db: Session, price_id: int) -> models.Price | None:
     return db.get(models.Price, price_id)
 
 
-def list_prices(db: Session, skip: int = 0, limit: int = 10) -> list[models.Price]:
-    return list(db.scalars(select(models.Price).order_by(models.Price.id).offset(skip).limit(limit)))
+def list_prices(db: Session, page: int = 1, page_size: int = 10) -> list[models.Price]:
+    return list(
+        db.scalars(
+            select(models.Price).order_by(models.Price.id).offset((page - 1) * page_size).limit(page_size)
+        )
+    )
 
 
 def count_prices(db: Session) -> int:

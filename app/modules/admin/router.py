@@ -16,12 +16,12 @@ def create_role(role_in: schemas.RoleCreate, db: Session = Depends(get_db)):
 
 @router.get("/roles", response_model=schemas.Page[schemas.RoleRead])
 def list_roles(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    items = crud.list_roles(db, skip=skip, limit=limit)
-    return schemas.Page(items=items, total=crud.count_roles(db), skip=skip, limit=limit)
+    items = crud.list_roles(db, page=page, page_size=page_size)
+    return schemas.Page(items=items, total=crud.count_roles(db), page=page, page_size=page_size)
 
 
 @router.get("/roles/{role_id}", response_model=schemas.RoleRead)
@@ -61,13 +61,13 @@ def register_personnel(personnel_in: schemas.PersonnelCreate, db: Session = Depe
 
 
 @router.get("/personnel", response_model=schemas.Page[schemas.PersonnelRead])
-def list_personnel(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+def paged_list_personnel(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    items = crud.list_personnel(db, skip=skip, limit=limit)
-    return schemas.Page(items=items, total=crud.count_personnel(db), skip=skip, limit=limit)
+    items = crud.paged_list_personnel(db, page=page, page_size=page_size)
+    return schemas.Page(items=items, total=crud.count_personnel(db), page=page, page_size=page_size)
 
 
 @router.get("/personnel/{personnel_id}", response_model=schemas.PersonnelRead)
@@ -115,12 +115,12 @@ def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_
 
 @router.get("/products", response_model=schemas.Page[schemas.ProductRead])
 def list_products(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    items = crud.list_products(db, skip=skip, limit=limit)
-    return schemas.Page(items=items, total=crud.count_products(db), skip=skip, limit=limit)
+    items = crud.list_products(db, page=page, page_size=page_size)
+    return schemas.Page(items=items, total=crud.count_products(db), page=page, page_size=page_size)
 
 
 @router.get("/products/{product_id}", response_model=schemas.ProductRead)
@@ -140,12 +140,12 @@ def create_quantity(quantity_in: schemas.QuantityCreate, db: Session = Depends(g
 
 @router.get("/quantities", response_model=schemas.Page[schemas.QuantityRead])
 def list_quantities(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    items = crud.list_quantities(db, skip=skip, limit=limit)
-    return schemas.Page(items=items, total=crud.count_quantities(db), skip=skip, limit=limit)
+    items = crud.list_quantities(db, page=page, page_size=page_size)
+    return schemas.Page(items=items, total=crud.count_quantities(db), page=page, page_size=page_size)
 
 
 @router.get("/quantities/{quantity_id}", response_model=schemas.QuantityRead)
@@ -165,12 +165,12 @@ def create_depot(depot_in: schemas.DepotCreate, db: Session = Depends(get_db)):
 
 @router.get("/depots", response_model=schemas.Page[schemas.DepotRead])
 def list_depots(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    items = crud.list_depots(db, skip=skip, limit=limit)
-    return schemas.Page(items=items, total=crud.count_depots(db), skip=skip, limit=limit)
+    items = crud.list_depots(db, page=page, page_size=page_size)
+    return schemas.Page(items=items, total=crud.count_depots(db), page=page, page_size=page_size)
 
 
 @router.get("/depots/{depot_id}", response_model=schemas.DepotRead)
@@ -190,12 +190,12 @@ def create_price(price_in: schemas.PriceCreate, db: Session = Depends(get_db)):
 
 @router.get("/prices", response_model=schemas.Page[schemas.PriceRead])
 def list_prices(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    items = crud.list_prices(db, skip=skip, limit=limit)
-    return schemas.Page(items=items, total=crud.count_prices(db), skip=skip, limit=limit)
+    items = crud.list_prices(db, page=page, page_size=page_size)
+    return schemas.Page(items=items, total=crud.count_prices(db), page=page, page_size=page_size)
 
 
 @router.get("/prices/{price_id}", response_model=schemas.PriceRead)

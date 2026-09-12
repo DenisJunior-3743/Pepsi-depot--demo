@@ -7,21 +7,21 @@ All request/response bodies are JSON. Interactive docs are available at `/docs` 
 ### Pagination
 
 Every `GET` list endpoint (roles, personnel, products, quantities, depots, prices) accepts:
-- `skip` (default `0`) — number of records to skip
-- `limit` (default `10`, max `100`) — number of records to return
+- `page` (default `1`) — page number, 1-indexed
+- `page_size` (default `10`, max `100`) — number of records per page
 
 Response shape (instead of a plain array):
 ```json
 {
   "items": [ /* the page of records */ ],
   "total": 37,
-  "skip": 0,
-  "limit": 10
+  "page": 1,
+  "page_size": 10
 }
 ```
 `total` is the full count of records regardless of page size, so you can tell how many pages there are.
 
-Example: `GET /admin/personnel?skip=10&limit=10` returns the second page of 10.
+Example: `GET /admin/personnel?page=2&page_size=10` returns the second page of 10.
 
 ## Roles
 

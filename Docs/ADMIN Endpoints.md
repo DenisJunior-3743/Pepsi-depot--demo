@@ -90,6 +90,7 @@ Request body:
 ```json
 {
   "role_id": 1,
+  "depot_id": 1,
   "name": "John Mwangi",
   "gender": "Male",
   "contact": "0711223344",
@@ -97,7 +98,7 @@ Request body:
 }
 ```
 
-`role_id` and `salary` are optional — personnel can be registered before a role/salary is assigned.
+`role_id`, `depot_id` and `salary` are optional — personnel can be registered before a role/depot/salary is assigned.
 
 Responses:
 - `201 Created` — returns the created personnel record
@@ -105,6 +106,7 @@ Responses:
 {
   "id": 1,
   "role_id": 1,
+  "depot_id": 1,
   "name": "John Mwangi",
   "gender": "Male",
   "contact": "0711223344",
@@ -112,7 +114,7 @@ Responses:
   "created_at": "2026-09-11T11:52:46.239888"
 }
 ```
-- `404 Not Found` — `role_id` does not reference an existing role
+- `404 Not Found` — `role_id` does not reference an existing role, or `depot_id` does not reference an existing depot
 - `422 Unprocessable Entity` — validation failure (e.g. `salary` not greater than 0, `name`/`contact` too short)
 
 ### List personnel
@@ -133,6 +135,7 @@ Request body (full replace, same shape as register):
 ```json
 {
   "role_id": 1,
+  "depot_id": 1,
   "name": "John Mwangi",
   "gender": "Male",
   "contact": "0711223344",
@@ -142,7 +145,7 @@ Request body (full replace, same shape as register):
 
 Responses:
 - `200 OK` — returns the updated personnel record
-- `404 Not Found` — no personnel record with that ID, or `role_id` does not reference an existing role
+- `404 Not Found` — no personnel record with that ID, or `role_id`/`depot_id` does not reference an existing role/depot
 - `422 Unprocessable Entity` — validation failure
 
 ### Delete personnel
@@ -167,6 +170,22 @@ Request body:
 Responses:
 - `200 OK` — returns the updated personnel record with the new `role_id`
 - `404 Not Found` — no personnel record with that ID, or `role_id` does not reference an existing role
+
+### Assign depot
+`PATCH /admin/personnel/{personnel_id}/depot`
+
+Lightweight alternative to `PUT` when you only want to change someone's depot — no need to resend name/gender/contact/salary.
+
+Request body:
+```json
+{
+  "depot_id": 2
+}
+```
+
+Responses:
+- `200 OK` — returns the updated personnel record with the new `depot_id`
+- `404 Not Found` — no personnel record with that ID, or `depot_id` does not reference an existing depot
 
 ---
 
@@ -298,6 +317,7 @@ Responses:
 Responses:
 - `204 No Content` — depot deleted
 - `404 Not Found` — no depot with that ID
+- `409 Conflict` — depot is still assigned to one or more personnel (reassign/remove those first)
 
 ---
 

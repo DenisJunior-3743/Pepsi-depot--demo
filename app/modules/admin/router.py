@@ -57,6 +57,8 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
 def register_personnel(personnel_in: schemas.PersonnelCreate, db: Session = Depends(get_db)):
     if personnel_in.role_id is not None and crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    if personnel_in.depot_id is not None and crud.get_depot(db, personnel_in.depot_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
     return crud.create_personnel(db, personnel_in)
 
 
@@ -85,6 +87,8 @@ def update_personnel(personnel_id: int, personnel_in: schemas.PersonnelCreate, d
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
     if personnel_in.role_id is not None and crud.get_role(db, personnel_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    if personnel_in.depot_id is not None and crud.get_depot(db, personnel_in.depot_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
     return crud.update_personnel(db, personnel, personnel_in)
 
 
@@ -104,6 +108,16 @@ def assign_personnel_role(personnel_id: int, role_in: schemas.PersonnelRoleAssig
     if crud.get_role(db, role_in.role_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
     return crud.assign_personnel_role(db, personnel, role_in.role_id)
+
+
+@router.patch("/personnel/{personnel_id}/depot", response_model=schemas.PersonnelRead)
+def assign_personnel_depot(personnel_id: int, depot_in: schemas.PersonnelDepotAssign, db: Session = Depends(get_db)):
+    personnel = crud.get_personnel(db, personnel_id)
+    if personnel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personnel not found")
+    if crud.get_depot(db, depot_in.depot_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
+    return crud.assign_personnel_depot(db, personnel, depot_in.depot_id)
 
 
 @router.post("/products", response_model=schemas.ProductRead, status_code=status.HTTP_201_CREATED)
@@ -197,6 +211,8 @@ def delete_depot(depot_id: int, db: Session = Depends(get_db)):
     depot = crud.get_depot(db, depot_id)
     if depot is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
+    if crud.count_personnel_with_depot(db, depot_id) > 0:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Depot is assigned to existing personnel")
     crud.delete_depot(db, depot)
 
 

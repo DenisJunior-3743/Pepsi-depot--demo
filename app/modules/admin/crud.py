@@ -52,9 +52,14 @@ def count_personnel_with_role(db: Session, role_id: int) -> int:
     return db.scalar(select(func.count()).select_from(models.Personnel).where(models.Personnel.role_id == role_id)) or 0
 
 
+def count_personnel_with_depot(db: Session, depot_id: int) -> int:
+    return db.scalar(select(func.count()).select_from(models.Personnel).where(models.Personnel.depot_id == depot_id)) or 0
+
+
 def create_personnel(db: Session, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
     personnel = models.Personnel(
         role_id=personnel_in.role_id,
+        depot_id=personnel_in.depot_id,
         name=personnel_in.name,
         gender=personnel_in.gender,
         contact=personnel_in.contact,
@@ -84,6 +89,7 @@ def count_personnel(db: Session) -> int:
 
 def update_personnel(db: Session, personnel: models.Personnel, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
     personnel.role_id = personnel_in.role_id
+    personnel.depot_id = personnel_in.depot_id
     personnel.name = personnel_in.name
     personnel.gender = personnel_in.gender
     personnel.contact = personnel_in.contact
@@ -96,6 +102,13 @@ def update_personnel(db: Session, personnel: models.Personnel, personnel_in: sch
 def delete_personnel(db: Session, personnel: models.Personnel) -> None:
     db.delete(personnel)
     db.commit()
+
+
+def assign_personnel_depot(db: Session, personnel: models.Personnel, depot_id: int) -> models.Personnel:
+    personnel.depot_id = depot_id
+    db.commit()
+    db.refresh(personnel)
+    return personnel
 
 
 def assign_personnel_role(db: Session, personnel: models.Personnel, role_id: int) -> models.Personnel:

@@ -27,6 +27,7 @@ class Personnel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=True)
+    depot_id: Mapped[int] = mapped_column(ForeignKey("depots.id"), nullable=True)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     gender: Mapped[Gender] = mapped_column(
         SqlEnum(Gender, name="gender_enum", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
@@ -37,6 +38,7 @@ class Personnel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     role: Mapped["Role"] = relationship(back_populates="personnel")
+    depot: Mapped["Depot"] = relationship(back_populates="personnel")
 
 
 class Product(Base):
@@ -59,6 +61,8 @@ class Depot(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     location: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    personnel: Mapped[list["Personnel"]] = relationship(back_populates="depot")
 
 
 class Price(Base):

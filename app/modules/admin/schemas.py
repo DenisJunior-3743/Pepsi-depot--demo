@@ -29,6 +29,7 @@ class RoleRead(BaseModel):
 
 class PersonnelCreate(BaseModel):
     role_id: int | None = None
+    depot_id: int | None = None
     name: str = Field(min_length=2, max_length=150)
     gender: Gender
     contact: str = Field(min_length=7, max_length=20)
@@ -40,6 +41,7 @@ class PersonnelRead(BaseModel):
 
     id: int
     role_id: int | None
+    depot_id: int | None
     name: str
     gender: Gender
     contact: str
@@ -49,6 +51,10 @@ class PersonnelRead(BaseModel):
 
 class PersonnelRoleAssign(BaseModel):
     role_id: int
+
+
+class PersonnelDepotAssign(BaseModel):
+    depot_id: int
 
 
 class ProductCreate(BaseModel):

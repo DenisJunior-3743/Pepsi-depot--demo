@@ -4,6 +4,34 @@ The Auth Module is available under `/auth`. This is what gates every other endpo
 — read this before touching any other module's endpoints, since **every** create/read/update/delete
 route across Admin, Factory, and Depot now requires a valid token *and* the matching permission.
 
+## Frontend integration — the exact sequence
+
+1. **Build the login screen first.** It's the only screen that works with zero setup — email +
+   password, `POST /auth/login`.
+2. **Store the token** from the response (`access_token`) — `localStorage`/`sessionStorage` for a
+   plain SPA, or wherever your framework's auth pattern keeps it. Store the `user` object alongside
+   it (or re-fetch via `GET /auth/me`) — you need `permissions` for step 4.
+3. **Attach it to every request from here on**, no exceptions:
+   ```
+   Authorization: Bearer <access_token>
+   ```
+   The cleanest way is a single fetch/axios wrapper (interceptor) that adds this header
+   automatically, rather than remembering it per call site.
+4. **Gate the UI on `permissions`.** The array is a flat list of `"module:action"` strings, e.g.
+   `"factory.production:create"`. Check membership before rendering a button/route, not just before
+   calling the endpoint (the backend blocks it either way — this is purely so the user isn't shown a
+   button that 403s).
+5. **Handle `401` globally**: token missing/expired/invalid → clear stored auth state, redirect to
+   login. Handle `403` locally, per-action: token is fine, the account just can't do *this specific
+   thing* — show a message, don't log them out.
+6. **Re-fetch `GET /auth/me`** after any screen where permissions might have changed (e.g. if your
+   app has its own permissions-management screen) — the token doesn't carry permissions, so a stale
+   client-side copy is the only thing that can be wrong; the backend itself is always current.
+
+A working bootstrap admin account already exists for local development against the shared database:
+email `admin@pepsidepo.com`, password `Admin123`, role `Boss` (every permission). Use it to log in
+and start building — don't wait on a "real" account being created for you.
+
 ## How it fits together
 
 - **`users`** — a login account: `username`, `password` (bcrypt-hashed), and `personnel_id` (one
@@ -109,9 +137,9 @@ through the API, and it exists specifically to avoid a chicken-and-egg problem (
 a permission to grant the first permission). It's additive only: revoking something from Boss later
 sticks, this just fills in whatever's missing on every startup.
 
-There is currently no user account for anyone — `POST /auth/users` needs a token, and no token can
-exist without a user account. The very first one has to be created directly against the database
-once, by whoever has DB access:
+A bootstrap account already exists (see Frontend integration above) — `POST /auth/users` needs a
+token, and no token can exist without a user account, so the very first one had to be created
+directly against the database once. For reference, or if you ever need a second one the same way:
 
 ```python
 from app.db.session import SessionLocal

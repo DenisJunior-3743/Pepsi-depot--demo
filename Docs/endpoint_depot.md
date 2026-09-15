@@ -10,6 +10,27 @@ Every endpoint below now requires `Authorization: Bearer <token>` (see `Docs/end
 a matching permission: `depot.restock:<action>` for restock/confirm/reject/stock endpoints,
 `depot.sales:<action>` for sales endpoints. No token → `401`. Token but missing permission → `403`.
 
+## Depends on Admin and Factory — build order
+
+This module reads reference data it never creates itself:
+- `GET /admin/depots`, `/admin/products`, `/admin/quantities`, `/admin/personnel`, `/admin/prices` —
+  every dropdown on every form in this module (depot picker, product/quantity picker, "confirmed
+  by"/"sold by" personnel picker) comes from these. Build Admin's list endpoints first.
+- `GET /factory/supplies` — a delivery can't be confirmed/rejected here until Factory has dispatched
+  it there first. The "pending deliveries" screen is really a filtered view of Factory's data (see
+  the note just below on why that filter doesn't fully work yet).
+
+### Typical frontend flow
+
+1. Depot attendant sees a delivery is coming (out-of-band for now — see note below) →
+   `POST /depot/restock/{supply_history_id}/confirm` or `.../reject`.
+2. Depot attendant checks depot stock → `GET /depot/stock`.
+3. Depot attendant/seller records a sale → `POST /depot/sales` (auto-prices from Admin's `prices`
+   unless overridden).
+4. Seller checks today's running total → `GET /depot/sales-current` (this is the "cumulative daily
+   sales that clears at midnight" screen from the project brief — no special "clear" action needed,
+   it's just always scoped to today).
+
 ## Important: Factory doesn't know about depots yet
 
 `supply_history` (the dispatch record from the Factory Module) has **no `depot_id` field**. This means there is currently no way to ask the API "what deliveries are pending for depot X" — the frontend has to know out-of-band (via team communication, a shared sheet, whatever) which `supply_history_id` is headed to which depot, and pass `depot_id` itself when confirming/rejecting. Once Factory adds `depot_id`, this doc will be updated and the depot-filtering gap goes away. Until then, build the "confirm this delivery" screen around a manually-entered or manually-selected supply ID.

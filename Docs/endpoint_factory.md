@@ -4,6 +4,29 @@ The Factory Module is available under `/factory`.
 
 The module reuses Admin `products` and `quantities`. It does not create Admin records or update depot stock.
 
+### Depends on Admin — build order
+
+Every `product_id` and `quantity_id` used here must already exist in Admin's `products`/
+`quantities` tables (see `ADMIN Endpoints.md`). Concretely, before building the "record production"
+or "dispatch supply" forms:
+1. Fetch `GET /admin/products` and `GET /admin/quantities` to populate the two dropdowns every form
+   on this page needs.
+2. If those lists are empty (fresh environment), create a few through `POST /admin/products` /
+   `POST /admin/quantities` first — there's no way to create a product or quantity from within this
+   module.
+
+### Typical frontend flow
+
+1. Factory manager records production → `POST /factory/production` (bumps `factory_current_stock`).
+2. Factory manager checks what's available → `GET /factory/stock`.
+3. Factory manager dispatches some of it to a depot → `POST /factory/supplies` (status starts
+   `pending`, decrements `factory_current_stock` immediately — the stock has physically left, whether
+   or not the depot has confirmed receipt yet).
+4. From here, the record is owned by the **Depot** module — a depot attendant confirms or rejects it
+   via `POST /depot/restock/{supply_history_id}/confirm` or `.../reject` (see `endpoint_depot.md`).
+   Factory's own `PUT /factory/supplies/{id}` can still change status directly, but for the normal
+   confirm/reject flow, build that screen in Depot, not here.
+
 ### Authentication required
 
 Every endpoint below now requires `Authorization: Bearer <token>` (see `Docs/endpoint_auth.md`) plus

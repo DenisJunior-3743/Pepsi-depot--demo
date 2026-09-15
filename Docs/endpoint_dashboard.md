@@ -1,8 +1,14 @@
-# Dashboard Module API
+# Dashboard Module API — the "Boss" overview screen
 
 The Dashboard Module is available under `/dashboard`. It's a read-only aggregation over Admin,
 Factory, and Depot data — built for a single "boss overview" screen: load the cards, click one to
 drill into its history.
+
+### Depends on everything — build this last
+
+This module creates nothing and has no forms — it's a read view over data the other three modules
+already produce. Build it after Admin, Factory, and Depot exist, since an empty system just shows a
+wall of zeros (which is correct behavior, not a bug — see Notes below).
 
 ### Authentication required
 

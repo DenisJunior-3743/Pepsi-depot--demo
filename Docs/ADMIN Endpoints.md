@@ -11,6 +11,21 @@ the matching `admin.<resource>:<action>` permission — e.g. `POST /admin/roles`
 `admin.roles:create`, `GET /admin/personnel/{id}` needs `admin.personnel:read`. No token → `401`.
 Token but missing permission → `403`.
 
+### Why this module comes first
+
+Factory and Depot don't manage their own products, pack sizes, or depots — every `product_id`,
+`quantity_id`, and `depot_id` used anywhere in Factory or Depot has to already exist here. Concretely:
+
+- `GET /admin/products` and `GET /admin/quantities` feed the dropdowns on Factory's "record
+  production" and "dispatch supply" forms, and Depot's "record sale" form.
+- `GET /admin/depots` feeds Depot's depot picker.
+- `GET /admin/personnel` feeds "confirmed by" / "sold by" pickers on Depot's forms.
+- `GET /admin/prices` is what Depot's sale form uses to auto-price a sale (quantity → price).
+
+Build (or at minimum, stub) these list screens — or just seed a handful of products/quantities/
+depots directly through this API — before wiring up Factory or Depot's create-forms, or those
+forms will have nothing to select from.
+
 ### Pagination
 
 Every `GET` list endpoint (roles, personnel, products, quantities, depots, prices) accepts:

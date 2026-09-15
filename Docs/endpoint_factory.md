@@ -104,7 +104,7 @@ The request returns `409 Conflict` when available stock is less than `amount`. I
 
 Returns SupplyHistory records ordered newest first. Returns `200 OK`.
 
-Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`), `date`, `product_id`, `product_name`, and `quantity`.
+Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`), `date`, `product_id`, `product_name`, `quantity`, and `status` (`pending`, `received`, or `rejected`).
 
 ### `GET /factory/supplies/{supply_id}`
 

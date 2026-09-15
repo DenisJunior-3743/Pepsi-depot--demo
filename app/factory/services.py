@@ -203,7 +203,7 @@ def list_production(db: Session, skip: int = 0, limit: int = 10, history_date=No
     return list(db.scalars(query.order_by(ProductionRecord.production_date.desc()).offset(skip).limit(limit)))
 
 
-def list_supplies(db: Session, skip: int = 0, limit: int = 10, history_date=None, product_id: int | None = None, product_name: str | None = None, quantity: int | None = None) -> list[SupplyHistory]:
+def list_supplies(db: Session, skip: int = 0, limit: int = 10, history_date=None, product_id: int | None = None, product_name: str | None = None, quantity: int | None = None, status_filter: SupplyStatus | None = None) -> list[SupplyHistory]:
     query = select(SupplyHistory).join(SupplyHistory.product).options(selectinload(SupplyHistory.product), selectinload(SupplyHistory.quantity_record))
     if history_date is not None:
         query = query.where(SupplyHistory.created_date >= history_date, SupplyHistory.created_date < history_date.replace(hour=23, minute=59, second=59, microsecond=999999))
@@ -213,4 +213,6 @@ def list_supplies(db: Session, skip: int = 0, limit: int = 10, history_date=None
         query = query.where(Product.name.ilike(f"%{product_name}%"))
     if quantity is not None:
         query = query.where(SupplyHistory.amount == quantity)
+    if status_filter is not None:
+        query = query.where(SupplyHistory.status == status_filter)
     return list(db.scalars(query.order_by(SupplyHistory.created_date.desc()).offset(skip).limit(limit)))

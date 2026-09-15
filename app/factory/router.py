@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.factory.models import FactoryCurrentStock
+from app.factory.models import FactoryCurrentStock, SupplyStatus
 from app.factory.schemas import FactoryStockResponse, ProductionCreate, ProductionResponse, SupplyCreate, SupplyResponse
 from app.factory.schemas import SupplyUpdate
 from app.factory.services import create_supplies_batch, delete_production, delete_supply, get_production, get_stock, get_supply, list_production, list_supplies, record_production_batch, update_production, update_supply
@@ -60,10 +60,11 @@ def read_supply_history(
     product_id: int | None = Query(None, gt=0),
     product_name: str | None = None,
     quantity: int | None = Query(None, gt=0),
+    status_filter: SupplyStatus | None = Query(default=None, alias="status"),
     db: Session = Depends(get_db),
 ):
     history_datetime = datetime.combine(history_date, datetime.min.time()) if history_date else None
-    return list_supplies(db, skip, limit, history_datetime, product_id, product_name, quantity)
+    return list_supplies(db, skip, limit, history_datetime, product_id, product_name, quantity, status_filter)
 
 
 @router.get("/supplies/{supply_id}", response_model=SupplyResponse)

@@ -196,32 +196,39 @@ def delete_restock_entry(db: Session, entry_id: int) -> None:
     db.commit()
 
 
-def record_sale(db: Session, data: SaleCreate) -> SalesHistory:
-    amount_sold = data.amount_sold
-    if amount_sold is None:
-        price = db.scalar(select(Price).where(Price.quantity_id == data.quantity_id))
-        if price is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No price set for this quantity; provide amount_sold explicitly")
-        amount_sold = float(price.amount) * data.quantity_sold
+def _resolve_amount_sold(db: Session, data: SaleCreate) -> float:
+    if data.amount_sold is not None:
+        return data.amount_sold
+    price = db.scalar(select(Price).where(Price.quantity_id == data.quantity_id))
+    if price is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No price set for this quantity; provide amount_sold explicitly")
+    return float(price.amount) * data.quantity_sold
 
-    entry = SalesHistory(
-        depot_id=data.depot_id,
-        product_id=data.product_id,
-        quantity_id=data.quantity_id,
-        quantity_sold=data.quantity_sold,
-        amount_sold=amount_sold,
-        sold_by_id=data.sold_by_id,
-    )
-    try:
+
+def record_sales_batch(db: Session, data_list: list[SaleCreate]) -> list[SalesHistory]:
+    entries = []
+    for data in data_list:
+        amount_sold = _resolve_amount_sold(db, data)
+        entry = SalesHistory(
+            depot_id=data.depot_id,
+            product_id=data.product_id,
+            quantity_id=data.quantity_id,
+            quantity_sold=data.quantity_sold,
+            amount_sold=amount_sold,
+            sold_by_id=data.sold_by_id,
+        )
         db.add(entry)
+        entries.append(entry)
+    try:
         db.commit()
-        db.refresh(entry)
-        return entry
+        for entry in entries:
+            db.refresh(entry)
+        return entries
     except DBAPIError as exc:
         db.rollback()
         if _is_insufficient_stock(exc):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock at this depot for the requested sale")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid depot, product, or quantity reference")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock at this depot for one of the requested sales")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid depot, product, or quantity reference in one of the requested sales")
 
 
 def list_sales_history(

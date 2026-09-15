@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -8,14 +8,14 @@ from app.db.session import get_db
 from app.factory.models import FactoryCurrentStock
 from app.factory.schemas import FactoryStockResponse, ProductionCreate, ProductionResponse, SupplyCreate, SupplyResponse
 from app.factory.schemas import SupplyUpdate
-from app.factory.services import create_supply, delete_production, delete_supply, get_production, get_stock, get_supply, list_production, list_supplies, record_production, update_production, update_supply
+from app.factory.services import create_supplies_batch, delete_production, delete_supply, get_production, get_stock, get_supply, list_production, list_supplies, record_production_batch, update_production, update_supply
 
 router = APIRouter(prefix="/factory", tags=["Factory"])
 
 
-@router.post("/production", response_model=ProductionResponse, status_code=status.HTTP_201_CREATED)
-def create_production(data: ProductionCreate, db: Session = Depends(get_db)):
-    return record_production(db, data)
+@router.post("/production", response_model=list[ProductionResponse], status_code=status.HTTP_201_CREATED)
+def create_production(data: list[ProductionCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    return record_production_batch(db, data)
 
 
 @router.get("/production", response_model=list[ProductionResponse])
@@ -47,9 +47,9 @@ def delete_factory_production(production_id: int, db: Session = Depends(get_db))
     delete_production(db, get_production(db, production_id))
 
 
-@router.post("/supplies", response_model=SupplyResponse, status_code=status.HTTP_201_CREATED)
-def create_factory_supply(data: SupplyCreate, db: Session = Depends(get_db)):
-    return create_supply(db, data)
+@router.post("/supplies", response_model=list[SupplyResponse], status_code=status.HTTP_201_CREATED)
+def create_factory_supply(data: list[SupplyCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    return create_supplies_batch(db, data)
 
 
 @router.get("/supplies", response_model=list[SupplyResponse])

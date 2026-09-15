@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -55,9 +55,9 @@ def list_current_stock(depot_id: int | None = None, db: Session = Depends(get_db
     return services.list_current_stock(db, depot_id)
 
 
-@router.post("/sales", response_model=schemas.SaleResponse, status_code=status.HTTP_201_CREATED)
-def record_sale(data: schemas.SaleCreate, db: Session = Depends(get_db)):
-    return services.record_sale(db, data)
+@router.post("/sales", response_model=list[schemas.SaleResponse], status_code=status.HTTP_201_CREATED)
+def record_sale(data: list[schemas.SaleCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    return services.record_sales_batch(db, data)
 
 
 @router.get("/sales", response_model=schemas.PagedResponse[schemas.SaleResponse])

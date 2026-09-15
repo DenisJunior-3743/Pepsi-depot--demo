@@ -20,19 +20,24 @@ def _get_or_create_stock(db: Session, product_id: int, quantity_id: int) -> Fact
     return stock
 
 
-def record_production(db: Session, data: ProductionCreate) -> ProductionRecord:
-    if db.get(Product, data.product_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    if db.get(Quantity, data.quantity_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
-    stock = _get_or_create_stock(db, data.product_id, data.quantity_id)
-    stock.available_quantity += data.quantity_produced
-    record = ProductionRecord(**data.model_dump(exclude_none=True))
+def record_production_batch(db: Session, data_list: list[ProductionCreate]) -> list[ProductionRecord]:
+    for data in data_list:
+        if db.get(Product, data.product_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product not found: {data.product_id}")
+        if db.get(Quantity, data.quantity_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Quantity not found: {data.quantity_id}")
+    records = []
     try:
-        db.add(record)
+        for data in data_list:
+            stock = _get_or_create_stock(db, data.product_id, data.quantity_id)
+            stock.available_quantity += data.quantity_produced
+            record = ProductionRecord(**data.model_dump(exclude_none=True))
+            db.add(record)
+            records.append(record)
         db.commit()
-        db.refresh(record)
-        return record
+        for record in records:
+            db.refresh(record)
+        return records
     except Exception:
         db.rollback()
         raise
@@ -87,25 +92,33 @@ def delete_production(db: Session, record: ProductionRecord) -> None:
     db.commit()
 
 
-def create_supply(db: Session, data: SupplyCreate) -> SupplyHistory:
-    if db.get(Product, data.product_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    if db.get(Quantity, data.quantity_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
-    stock = db.scalar(
-        select(FactoryCurrentStock)
-        .where(FactoryCurrentStock.product_id == data.product_id, FactoryCurrentStock.quantity_id == data.quantity_id)
-        .with_for_update()
-    )
-    if stock is None or stock.available_quantity < data.amount:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient factory stock")
-    history = SupplyHistory(**data.model_dump())
+def create_supplies_batch(db: Session, data_list: list[SupplyCreate]) -> list[SupplyHistory]:
+    for data in data_list:
+        if db.get(Product, data.product_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product not found: {data.product_id}")
+        if db.get(Quantity, data.quantity_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Quantity not found: {data.quantity_id}")
+    history_records = []
     try:
-        stock.available_quantity -= data.amount
-        db.add(history)
+        for data in data_list:
+            stock = db.scalar(
+                select(FactoryCurrentStock)
+                .where(FactoryCurrentStock.product_id == data.product_id, FactoryCurrentStock.quantity_id == data.quantity_id)
+                .with_for_update()
+            )
+            if stock is None or stock.available_quantity < data.amount:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Insufficient factory stock for product {data.product_id}, quantity {data.quantity_id}",
+                )
+            stock.available_quantity -= data.amount
+            history = SupplyHistory(**data.model_dump())
+            db.add(history)
+            history_records.append(history)
         db.commit()
-        db.refresh(history)
-        return history
+        for history in history_records:
+            db.refresh(history)
+        return history_records
     except Exception:
         db.rollback()
         raise

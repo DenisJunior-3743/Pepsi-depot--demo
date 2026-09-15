@@ -8,12 +8,13 @@ def _count(db: Session, model) -> int:
     return db.scalar(select(func.count()).select_from(model)) or 0
 
 
-def create_role(db: Session, role_in: schemas.RoleCreate) -> models.Role:
-    role = models.Role(name=role_in.name)
-    db.add(role)
+def create_roles_batch(db: Session, roles_in: list[schemas.RoleCreate]) -> list[models.Role]:
+    roles = [models.Role(name=r.name) for r in roles_in]
+    db.add_all(roles)
     db.commit()
-    db.refresh(role)
-    return role
+    for role in roles:
+        db.refresh(role)
+    return roles
 
 
 def get_role(db: Session, role_id: int) -> models.Role | None:
@@ -56,20 +57,24 @@ def count_personnel_with_depot(db: Session, depot_id: int) -> int:
     return db.scalar(select(func.count()).select_from(models.Personnel).where(models.Personnel.depot_id == depot_id)) or 0
 
 
-def create_personnel(db: Session, personnel_in: schemas.PersonnelCreate) -> models.Personnel:
-    personnel = models.Personnel(
-        role_id=personnel_in.role_id,
-        depot_id=personnel_in.depot_id,
-        name=personnel_in.name,
-        email=personnel_in.email,
-        gender=personnel_in.gender,
-        contact=personnel_in.contact,
-        salary=personnel_in.salary,
-    )
-    db.add(personnel)
+def create_personnel_batch(db: Session, personnel_in: list[schemas.PersonnelCreate]) -> list[models.Personnel]:
+    records = [
+        models.Personnel(
+            role_id=p.role_id,
+            depot_id=p.depot_id,
+            name=p.name,
+            email=p.email,
+            gender=p.gender,
+            contact=p.contact,
+            salary=p.salary,
+        )
+        for p in personnel_in
+    ]
+    db.add_all(records)
     db.commit()
-    db.refresh(personnel)
-    return personnel
+    for record in records:
+        db.refresh(record)
+    return records
 
 
 def get_personnel(db: Session, personnel_id: int) -> models.Personnel | None:
@@ -120,12 +125,13 @@ def assign_personnel_role(db: Session, personnel: models.Personnel, role_id: int
     return personnel
 
 
-def create_product(db: Session, product_in: schemas.ProductCreate) -> models.Product:
-    product = models.Product(name=product_in.name)
-    db.add(product)
+def create_products_batch(db: Session, products_in: list[schemas.ProductCreate]) -> list[models.Product]:
+    products = [models.Product(name=p.name) for p in products_in]
+    db.add_all(products)
     db.commit()
-    db.refresh(product)
-    return product
+    for product in products:
+        db.refresh(product)
+    return products
 
 
 def get_product(db: Session, product_id: int) -> models.Product | None:
@@ -148,12 +154,13 @@ def count_products(db: Session) -> int:
     return _count(db, models.Product)
 
 
-def create_quantity(db: Session, quantity_in: schemas.QuantityCreate) -> models.Quantity:
-    quantity = models.Quantity(quantity=quantity_in.quantity)
-    db.add(quantity)
+def create_quantities_batch(db: Session, quantities_in: list[schemas.QuantityCreate]) -> list[models.Quantity]:
+    quantities = [models.Quantity(quantity=q.quantity) for q in quantities_in]
+    db.add_all(quantities)
     db.commit()
-    db.refresh(quantity)
-    return quantity
+    for quantity in quantities:
+        db.refresh(quantity)
+    return quantities
 
 
 def get_quantity(db: Session, quantity_id: int) -> models.Quantity | None:
@@ -176,12 +183,13 @@ def count_quantities(db: Session) -> int:
     return _count(db, models.Quantity)
 
 
-def create_depot(db: Session, depot_in: schemas.DepotCreate) -> models.Depot:
-    depot = models.Depot(name=depot_in.name, location=depot_in.location)
-    db.add(depot)
+def create_depots_batch(db: Session, depots_in: list[schemas.DepotCreate]) -> list[models.Depot]:
+    depots = [models.Depot(name=d.name, location=d.location) for d in depots_in]
+    db.add_all(depots)
     db.commit()
-    db.refresh(depot)
-    return depot
+    for depot in depots:
+        db.refresh(depot)
+    return depots
 
 
 def get_depot(db: Session, depot_id: int) -> models.Depot | None:
@@ -217,15 +225,13 @@ def delete_depot(db: Session, depot: models.Depot) -> None:
     db.commit()
 
 
-def create_price(db: Session, price_in: schemas.PriceCreate) -> models.Price:
-    price = models.Price(
-        quantity_id=price_in.quantity_id,
-        amount=price_in.amount,
-    )
-    db.add(price)
+def create_prices_batch(db: Session, prices_in: list[schemas.PriceCreate]) -> list[models.Price]:
+    prices = [models.Price(quantity_id=p.quantity_id, amount=p.amount) for p in prices_in]
+    db.add_all(prices)
     db.commit()
-    db.refresh(price)
-    return price
+    for price in prices:
+        db.refresh(price)
+    return prices
 
 
 def get_price(db: Session, quantity_id: int) -> models.Price | None:

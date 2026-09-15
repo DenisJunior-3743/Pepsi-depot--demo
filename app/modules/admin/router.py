@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -7,11 +7,22 @@ from app.modules.admin import crud, schemas
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-@router.post("/roles", response_model=schemas.RoleRead, status_code=status.HTTP_201_CREATED)
-def create_role(role_in: schemas.RoleCreate, db: Session = Depends(get_db)):
-    if crud.get_role_by_name(db, role_in.name):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Role already exists")
-    return crud.create_role(db, role_in)
+def _reject_batch_duplicates(values: list[str], label: str) -> None:
+    seen = set()
+    for value in values:
+        key = value.lower()
+        if key in seen:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Duplicate {label} in request: {value}")
+        seen.add(key)
+
+
+@router.post("/roles", response_model=list[schemas.RoleRead], status_code=status.HTTP_201_CREATED)
+def create_roles(roles_in: list[schemas.RoleCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    _reject_batch_duplicates([r.name for r in roles_in], "role name")
+    for role_in in roles_in:
+        if crud.get_role_by_name(db, role_in.name):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Role already exists: {role_in.name}")
+    return crud.create_roles_batch(db, roles_in)
 
 
 @router.get("/roles", response_model=schemas.Page[schemas.RoleRead])
@@ -53,13 +64,14 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
     crud.delete_role(db, role)
 
 
-@router.post("/personnel", response_model=schemas.PersonnelRead, status_code=status.HTTP_201_CREATED)
-def register_personnel(personnel_in: schemas.PersonnelCreate, db: Session = Depends(get_db)):
-    if personnel_in.role_id is not None and crud.get_role(db, personnel_in.role_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
-    if personnel_in.depot_id is not None and crud.get_depot(db, personnel_in.depot_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Depot not found")
-    return crud.create_personnel(db, personnel_in)
+@router.post("/personnel", response_model=list[schemas.PersonnelRead], status_code=status.HTTP_201_CREATED)
+def register_personnel(personnel_in: list[schemas.PersonnelCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    for entry in personnel_in:
+        if entry.role_id is not None and crud.get_role(db, entry.role_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Role not found: {entry.role_id}")
+        if entry.depot_id is not None and crud.get_depot(db, entry.depot_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Depot not found: {entry.depot_id}")
+    return crud.create_personnel_batch(db, personnel_in)
 
 
 @router.get("/personnel", response_model=schemas.Page[schemas.PersonnelRead])
@@ -120,11 +132,13 @@ def assign_personnel_depot(personnel_id: int, depot_in: schemas.PersonnelDepotAs
     return crud.assign_personnel_depot(db, personnel, depot_in.depot_id)
 
 
-@router.post("/products", response_model=schemas.ProductRead, status_code=status.HTTP_201_CREATED)
-def create_product(product_in: schemas.ProductCreate, db: Session = Depends(get_db)):
-    if crud.get_product_by_name(db, product_in.name):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Product already exists")
-    return crud.create_product(db, product_in)
+@router.post("/products", response_model=list[schemas.ProductRead], status_code=status.HTTP_201_CREATED)
+def create_products(products_in: list[schemas.ProductCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    _reject_batch_duplicates([p.name for p in products_in], "product name")
+    for product_in in products_in:
+        if crud.get_product_by_name(db, product_in.name):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Product already exists: {product_in.name}")
+    return crud.create_products_batch(db, products_in)
 
 
 @router.get("/products", response_model=schemas.Page[schemas.ProductRead])
@@ -145,11 +159,13 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return product
 
 
-@router.post("/quantities", response_model=schemas.QuantityRead, status_code=status.HTTP_201_CREATED)
-def create_quantity(quantity_in: schemas.QuantityCreate, db: Session = Depends(get_db)):
-    if crud.get_quantity_by_value(db, quantity_in.quantity):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Quantity already exists")
-    return crud.create_quantity(db, quantity_in)
+@router.post("/quantities", response_model=list[schemas.QuantityRead], status_code=status.HTTP_201_CREATED)
+def create_quantities(quantities_in: list[schemas.QuantityCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    _reject_batch_duplicates([q.quantity for q in quantities_in], "quantity value")
+    for quantity_in in quantities_in:
+        if crud.get_quantity_by_value(db, quantity_in.quantity):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Quantity already exists: {quantity_in.quantity}")
+    return crud.create_quantities_batch(db, quantities_in)
 
 
 @router.get("/quantities", response_model=schemas.Page[schemas.QuantityRead])
@@ -170,11 +186,13 @@ def get_quantity(quantity_id: int, db: Session = Depends(get_db)):
     return quantity
 
 
-@router.post("/depots", response_model=schemas.DepotRead, status_code=status.HTTP_201_CREATED)
-def create_depot(depot_in: schemas.DepotCreate, db: Session = Depends(get_db)):
-    if crud.get_depot_by_name(db, depot_in.name):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Depot already exists")
-    return crud.create_depot(db, depot_in)
+@router.post("/depots", response_model=list[schemas.DepotRead], status_code=status.HTTP_201_CREATED)
+def create_depots(depots_in: list[schemas.DepotCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    _reject_batch_duplicates([d.name for d in depots_in], "depot name")
+    for depot_in in depots_in:
+        if crud.get_depot_by_name(db, depot_in.name):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Depot already exists: {depot_in.name}")
+    return crud.create_depots_batch(db, depots_in)
 
 
 @router.get("/depots", response_model=schemas.Page[schemas.DepotRead])
@@ -216,13 +234,18 @@ def delete_depot(depot_id: int, db: Session = Depends(get_db)):
     crud.delete_depot(db, depot)
 
 
-@router.post("/prices", response_model=schemas.PriceRead, status_code=status.HTTP_201_CREATED)
-def create_price(price_in: schemas.PriceCreate, db: Session = Depends(get_db)):
-    if crud.get_quantity(db, price_in.quantity_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
-    if crud.get_price(db, price_in.quantity_id) is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Price already exists for this quantity")
-    return crud.create_price(db, price_in)
+@router.post("/prices", response_model=list[schemas.PriceRead], status_code=status.HTTP_201_CREATED)
+def create_prices(prices_in: list[schemas.PriceCreate] = Body(..., min_length=1), db: Session = Depends(get_db)):
+    seen_quantity_ids = set()
+    for price_in in prices_in:
+        if price_in.quantity_id in seen_quantity_ids:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Duplicate quantity_id in request: {price_in.quantity_id}")
+        seen_quantity_ids.add(price_in.quantity_id)
+        if crud.get_quantity(db, price_in.quantity_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Quantity not found: {price_in.quantity_id}")
+        if crud.get_price(db, price_in.quantity_id) is not None:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Price already exists for quantity: {price_in.quantity_id}")
+    return crud.create_prices_batch(db, prices_in)
 
 
 @router.get("/prices", response_model=schemas.Page[schemas.PriceRead])

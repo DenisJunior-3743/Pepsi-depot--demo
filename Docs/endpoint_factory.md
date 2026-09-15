@@ -4,24 +4,37 @@ The Factory Module is available under `/factory`. Authentication is not required
 
 The module reuses Admin `products` and `quantities`. It does not create Admin records or update depot stock.
 
+### Batch creation
+
+`POST /factory/production` and `POST /factory/supplies` both take a **JSON array**, not a single
+object — wrap even one record: `[{...}]`. The whole array is one database transaction (including
+all the stock adjustments): if any item fails validation or a stock check, **nothing** in the
+request is created. The response is an array in the same order as the request, `201 Created` only
+if every item succeeded. Multiple items in the same batch targeting the same (product, quantity)
+stock line are applied cumulatively and in order — e.g. two production items for the same pack
+size sum into that one stock line; two supply items drawing from the same stock line are checked
+against each other's cumulative draw, not just independently.
+
 ## Production
 
 ### `POST /factory/production`
 
 Records production and increases `factory_current_stock` for that exact (product, quantity/pack-size) pair, in the same database transaction.
 
-Request:
+Request (array — see Batch creation above):
 
 ```json
-{
-  "product_id": 1,
-  "quantity_id": 3,
-  "quantity_produced": 200,
-  "production_date": "2026-09-11T10:00:00Z"
-}
+[
+  {
+    "product_id": 1,
+    "quantity_id": 3,
+    "quantity_produced": 200,
+    "production_date": "2026-09-11T10:00:00Z"
+  }
+]
 ```
 
-`product_id`, `quantity_id`, and `quantity_produced` must be positive. Both `product_id` and `quantity_id` must exist in the shared Admin tables — e.g. product "Mirinda Fruity" + quantity "320ml", both selected independently, then just the amount produced. `production_date` is optional and is stored as a timestamp. Returns `201 Created`.
+`product_id`, `quantity_id`, and `quantity_produced` must be positive. Both `product_id` and `quantity_id` must exist in the shared Admin tables — e.g. product "Mirinda Fruity" + quantity "320ml", both selected independently, then just the amount produced. `production_date` is optional and is stored as a timestamp. Returns `201 Created` with an array of the created records.
 
 > Stock is now tracked per (product, quantity) pair, not just per product — producing 320ml and 500ml
 > variants of the same product are separate stock lines, matching how `/factory/supplies` already
@@ -63,19 +76,21 @@ Stock responses contain `id`, `product_id`, `product_name`, `quantity_id`, `quan
 
 ### `POST /factory/supplies`
 
-Creates one `supply_history` record and decreases `factory_current_stock` atomically.
+Creates `supply_history` record(s) and decreases `factory_current_stock` atomically.
 
-Request:
+Request (array — see Batch creation above):
 
 ```json
-{
-  "product_id": 1,
-  "quantity_id": 1,
-  "amount": 80
-}
+[
+  {
+    "product_id": 1,
+    "quantity_id": 1,
+    "amount": 80
+  }
+]
 ```
 
-All three fields must be positive. The product and quantity must exist in the shared Admin tables. Returns `201 Created`.
+All three fields must be positive. The product and quantity must exist in the shared Admin tables. Returns `201 Created` with an array of the created records.
 
 The stock calculation is:
 

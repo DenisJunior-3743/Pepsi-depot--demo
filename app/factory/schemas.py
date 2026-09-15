@@ -6,6 +6,7 @@ from app.factory.models import SupplyStatus
 
 class ProductionCreate(BaseModel):
     product_id: int = Field(gt=0)
+    quantity_id: int = Field(gt=0)
     quantity_produced: int = Field(gt=0)
     production_date: datetime | None = None
 
@@ -16,6 +17,8 @@ class ProductionResponse(BaseModel):
     id: int
     product_id: int
     product_name: str
+    quantity_id: int | None
+    quantity_value: str | None
     quantity_produced: int
     production_date: datetime
     created_date: datetime
@@ -27,6 +30,8 @@ class FactoryStockResponse(BaseModel):
     id: int
     product_id: int
     product_name: str
+    quantity_id: int | None
+    quantity_value: str | None
     available_quantity: int
     updated_date: datetime
 

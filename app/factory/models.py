@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer
+from sqlalchemy import DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,28 +20,43 @@ class ProductionRecord(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
+    # Nullable only because historical rows predate this field - always required by the API for new records.
+    quantity_id: Mapped[int | None] = mapped_column(ForeignKey("quantities.id"), nullable=True, index=True)
     quantity_produced: Mapped[int] = mapped_column(Integer, nullable=False)
     production_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     created_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     product: Mapped[Product] = relationship()
+    quantity_record: Mapped[Quantity | None] = relationship()
 
     @property
     def product_name(self) -> str:
         return self.product.name
+
+    @property
+    def quantity_value(self) -> str | None:
+        return self.quantity_record.quantity if self.quantity_record else None
 
 
 class FactoryCurrentStock(Base):
     __tablename__ = "factory_current_stock"
+    __table_args__ = (UniqueConstraint("product_id", "quantity_id", name="uq_factory_current_stock_slot"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, unique=True, index=True)
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
+    # Nullable only because historical pooled-stock rows predate this field - always required for new rows.
+    quantity_id: Mapped[int | None] = mapped_column(ForeignKey("quantities.id"), nullable=True, index=True)
     available_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     updated_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     product: Mapped[Product] = relationship()
+    quantity_record: Mapped[Quantity | None] = relationship()
 
     @property
     def product_name(self) -> str:
         return self.product.name
+
+    @property
+    def quantity_value(self) -> str | None:
+        return self.quantity_record.quantity if self.quantity_record else None
 
 
 class SupplyHistory(Base):

@@ -82,10 +82,13 @@ def delete_factory_supply(supply_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/stock", response_model=list[FactoryStockResponse])
-def list_factory_stock(db: Session = Depends(get_db)):
-    return list(db.scalars(select(FactoryCurrentStock).options(selectinload(FactoryCurrentStock.product)).order_by(FactoryCurrentStock.product_id)))
+def list_factory_stock(product_id: int | None = Query(None, gt=0), db: Session = Depends(get_db)):
+    query = select(FactoryCurrentStock).options(selectinload(FactoryCurrentStock.product), selectinload(FactoryCurrentStock.quantity_record))
+    if product_id is not None:
+        query = query.where(FactoryCurrentStock.product_id == product_id)
+    return list(db.scalars(query.order_by(FactoryCurrentStock.product_id, FactoryCurrentStock.quantity_id)))
 
 
-@router.get("/stock/{product_id}", response_model=FactoryStockResponse)
-def read_factory_stock(product_id: int, db: Session = Depends(get_db)):
-    return get_stock(db, product_id)
+@router.get("/stock/{product_id}/{quantity_id}", response_model=FactoryStockResponse)
+def read_factory_stock(product_id: int, quantity_id: int, db: Session = Depends(get_db)):
+    return get_stock(db, product_id, quantity_id)

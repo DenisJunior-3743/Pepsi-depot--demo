@@ -59,13 +59,21 @@ def _require_pending(supply: SupplyHistory) -> None:
 
 
 def _restore_factory_stock(db: Session, supply: SupplyHistory) -> None:
-    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == supply.product_id).with_for_update())
+    stock = db.scalar(
+        select(FactoryCurrentStock)
+        .where(FactoryCurrentStock.product_id == supply.product_id, FactoryCurrentStock.quantity_id == supply.quantity_id)
+        .with_for_update()
+    )
     if stock is not None:
         stock.available_quantity += supply.amount
 
 
 def _deduct_factory_stock(db: Session, supply: SupplyHistory) -> None:
-    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == supply.product_id).with_for_update())
+    stock = db.scalar(
+        select(FactoryCurrentStock)
+        .where(FactoryCurrentStock.product_id == supply.product_id, FactoryCurrentStock.quantity_id == supply.quantity_id)
+        .with_for_update()
+    )
     if stock is not None:
         stock.available_quantity -= supply.amount
 

@@ -7,14 +7,25 @@ from app.factory.models import FactoryCurrentStock, ProductionRecord, SupplyHist
 from app.factory.schemas import ProductionCreate, SupplyCreate, SupplyUpdate
 
 
+def _get_or_create_stock(db: Session, product_id: int, quantity_id: int) -> FactoryCurrentStock:
+    stock = db.scalar(
+        select(FactoryCurrentStock)
+        .where(FactoryCurrentStock.product_id == product_id, FactoryCurrentStock.quantity_id == quantity_id)
+        .with_for_update()
+    )
+    if stock is None:
+        stock = FactoryCurrentStock(product_id=product_id, quantity_id=quantity_id, available_quantity=0)
+        db.add(stock)
+        db.flush()
+    return stock
+
+
 def record_production(db: Session, data: ProductionCreate) -> ProductionRecord:
     if db.get(Product, data.product_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == data.product_id).with_for_update())
-    if stock is None:
-        stock = FactoryCurrentStock(product_id=data.product_id, available_quantity=0)
-        db.add(stock)
-        db.flush()
+    if db.get(Quantity, data.quantity_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
+    stock = _get_or_create_stock(db, data.product_id, data.quantity_id)
     stock.available_quantity += data.quantity_produced
     record = ProductionRecord(**data.model_dump(exclude_none=True))
     try:
@@ -30,22 +41,27 @@ def record_production(db: Session, data: ProductionCreate) -> ProductionRecord:
 def update_production(db: Session, record: ProductionRecord, data: ProductionCreate) -> ProductionRecord:
     if db.get(Product, data.product_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == record.product_id).with_for_update())
-    if record.product_id != data.product_id:
+    if db.get(Quantity, data.quantity_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
+    slot_changed = (record.product_id, record.quantity_id) != (data.product_id, data.quantity_id)
+    if slot_changed:
+        stock = db.scalar(
+            select(FactoryCurrentStock)
+            .where(FactoryCurrentStock.product_id == record.product_id, FactoryCurrentStock.quantity_id == record.quantity_id)
+            .with_for_update()
+        )
         if stock is None or stock.available_quantity < record.quantity_produced:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock for production update")
-        target_stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == data.product_id).with_for_update())
-        if target_stock is None:
-            target_stock = FactoryCurrentStock(product_id=data.product_id, available_quantity=0)
-            db.add(target_stock)
-            db.flush()
+        target_stock = _get_or_create_stock(db, data.product_id, data.quantity_id)
         stock.available_quantity -= record.quantity_produced
         target_stock.available_quantity += data.quantity_produced
     else:
-        if stock is None or stock.available_quantity - record.quantity_produced + data.quantity_produced < 0:
+        stock = _get_or_create_stock(db, record.product_id, record.quantity_id)
+        if stock.available_quantity - record.quantity_produced + data.quantity_produced < 0:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock for production update")
         stock.available_quantity += data.quantity_produced - record.quantity_produced
     record.product_id = data.product_id
+    record.quantity_id = data.quantity_id
     record.quantity_produced = data.quantity_produced
     if data.production_date is not None:
         record.production_date = data.production_date
@@ -59,7 +75,11 @@ def update_production(db: Session, record: ProductionRecord, data: ProductionCre
 
 
 def delete_production(db: Session, record: ProductionRecord) -> None:
-    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == record.product_id).with_for_update())
+    stock = db.scalar(
+        select(FactoryCurrentStock)
+        .where(FactoryCurrentStock.product_id == record.product_id, FactoryCurrentStock.quantity_id == record.quantity_id)
+        .with_for_update()
+    )
     if stock is None or stock.available_quantity < record.quantity_produced:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient stock to delete production record")
     stock.available_quantity -= record.quantity_produced
@@ -72,7 +92,11 @@ def create_supply(db: Session, data: SupplyCreate) -> SupplyHistory:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
     if db.get(Quantity, data.quantity_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
-    stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == data.product_id).with_for_update())
+    stock = db.scalar(
+        select(FactoryCurrentStock)
+        .where(FactoryCurrentStock.product_id == data.product_id, FactoryCurrentStock.quantity_id == data.quantity_id)
+        .with_for_update()
+    )
     if stock is None or stock.available_quantity < data.amount:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Insufficient factory stock")
     history = SupplyHistory(**data.model_dump())
@@ -93,7 +117,11 @@ def update_supply(db: Session, supply: SupplyHistory, data: SupplyUpdate) -> Sup
     if data.status != SupplyStatus.rejected:
         data.rejection_reason = None
     if supply.status == SupplyStatus.pending and data.status == SupplyStatus.rejected:
-        stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == supply.product_id).with_for_update())
+        stock = db.scalar(
+            select(FactoryCurrentStock)
+            .where(FactoryCurrentStock.product_id == supply.product_id, FactoryCurrentStock.quantity_id == supply.quantity_id)
+            .with_for_update()
+        )
         if stock is not None:
             stock.available_quantity += supply.amount
     supply.status = data.status
@@ -109,7 +137,11 @@ def update_supply(db: Session, supply: SupplyHistory, data: SupplyUpdate) -> Sup
 
 def delete_supply(db: Session, supply: SupplyHistory) -> None:
     if supply.status == SupplyStatus.pending:
-        stock = db.scalar(select(FactoryCurrentStock).where(FactoryCurrentStock.product_id == supply.product_id).with_for_update())
+        stock = db.scalar(
+            select(FactoryCurrentStock)
+            .where(FactoryCurrentStock.product_id == supply.product_id, FactoryCurrentStock.quantity_id == supply.quantity_id)
+            .with_for_update()
+        )
         if stock is not None:
             stock.available_quantity += supply.amount
     db.delete(supply)
@@ -124,21 +156,29 @@ def get_supply(db: Session, supply_id: int) -> SupplyHistory:
 
 
 def get_production(db: Session, production_id: int) -> ProductionRecord:
-    record = db.scalar(select(ProductionRecord).options(selectinload(ProductionRecord.product)).where(ProductionRecord.id == production_id))
+    record = db.scalar(
+        select(ProductionRecord)
+        .options(selectinload(ProductionRecord.product), selectinload(ProductionRecord.quantity_record))
+        .where(ProductionRecord.id == production_id)
+    )
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Production record not found")
     return record
 
 
-def get_stock(db: Session, product_id: int) -> FactoryCurrentStock:
-    stock = db.scalar(select(FactoryCurrentStock).options(selectinload(FactoryCurrentStock.product)).where(FactoryCurrentStock.product_id == product_id))
+def get_stock(db: Session, product_id: int, quantity_id: int) -> FactoryCurrentStock:
+    stock = db.scalar(
+        select(FactoryCurrentStock)
+        .options(selectinload(FactoryCurrentStock.product), selectinload(FactoryCurrentStock.quantity_record))
+        .where(FactoryCurrentStock.product_id == product_id, FactoryCurrentStock.quantity_id == quantity_id)
+    )
     if stock is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Factory stock not found")
     return stock
 
 
 def list_production(db: Session, skip: int = 0, limit: int = 10, history_date=None, product_id: int | None = None, product_name: str | None = None, quantity: int | None = None) -> list[ProductionRecord]:
-    query = select(ProductionRecord).join(ProductionRecord.product).options(selectinload(ProductionRecord.product))
+    query = select(ProductionRecord).join(ProductionRecord.product).options(selectinload(ProductionRecord.product), selectinload(ProductionRecord.quantity_record))
     if history_date is not None:
         query = query.where(ProductionRecord.production_date >= history_date, ProductionRecord.production_date < history_date.replace(hour=23, minute=59, second=59, microsecond=999999))
     if product_id is not None:

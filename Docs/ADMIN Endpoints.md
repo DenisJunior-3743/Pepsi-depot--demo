@@ -4,6 +4,13 @@ Base URL prefix: `/admin`
 
 All request/response bodies are JSON. Interactive docs are available at `/docs` when the server is running.
 
+### Authentication required
+
+Every endpoint below now requires `Authorization: Bearer <token>` (see `Docs/endpoint_auth.md`) plus
+the matching `admin.<resource>:<action>` permission — e.g. `POST /admin/roles` needs
+`admin.roles:create`, `GET /admin/personnel/{id}` needs `admin.personnel:read`. No token → `401`.
+Token but missing permission → `403`.
+
 ### Pagination
 
 Every `GET` list endpoint (roles, personnel, products, quantities, depots, prices) accepts:

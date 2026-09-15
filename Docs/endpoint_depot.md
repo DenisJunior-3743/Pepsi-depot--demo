@@ -1,8 +1,14 @@
 # Depot Module API
 
-The Depot Module is available under `/depot`. Authentication is not required yet — `depot_id` and personnel IDs (`confirmed_by_id`, `sold_by_id`, `supplier_id`) must be passed explicitly in request bodies, sourced from whatever depot/user context the frontend currently has selected (e.g. a depot picker, a hardcoded personnel ID for now).
+The Depot Module is available under `/depot`. `depot_id` and personnel IDs (`confirmed_by_id`, `sold_by_id`, `supplier_id`) must still be passed explicitly in request bodies — login identifies *who* is calling for permission-checking purposes, but doesn't yet auto-fill these fields, so the frontend still sources them from whatever depot/user context it has selected (e.g. a depot picker, or `personnel_id` from `GET /auth/me`).
 
 The module reads and writes Admin's `products`, `quantities`, `depots`, `personnel`, and `prices`, and reads/updates Factory's `supply_history`. It does not create Admin or Factory records on its own.
+
+### Authentication required
+
+Every endpoint below now requires `Authorization: Bearer <token>` (see `Docs/endpoint_auth.md`) plus
+a matching permission: `depot.restock:<action>` for restock/confirm/reject/stock endpoints,
+`depot.sales:<action>` for sales endpoints. No token → `401`. Token but missing permission → `403`.
 
 ## Important: Factory doesn't know about depots yet
 

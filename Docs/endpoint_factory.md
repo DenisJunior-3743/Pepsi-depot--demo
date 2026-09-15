@@ -1,8 +1,15 @@
 # Factory Module API
 
-The Factory Module is available under `/factory`. Authentication is not required yet.
+The Factory Module is available under `/factory`.
 
 The module reuses Admin `products` and `quantities`. It does not create Admin records or update depot stock.
+
+### Authentication required
+
+Every endpoint below now requires `Authorization: Bearer <token>` (see `Docs/endpoint_auth.md`) plus
+a matching permission: `factory.production:<action>` for production and stock endpoints,
+`factory.supplies:<action>` for supply endpoints. No token → `401`. Token but missing permission →
+`403`.
 
 ### Batch creation
 

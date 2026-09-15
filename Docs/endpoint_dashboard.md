@@ -4,6 +4,13 @@ The Dashboard Module is available under `/dashboard`. It's a read-only aggregati
 Factory, and Depot data — built for a single "boss overview" screen: load the cards, click one to
 drill into its history.
 
+### Authentication required
+
+Requires `Authorization: Bearer <token>` (see `Docs/endpoint_auth.md`) — but no specific permission,
+just a valid login. It aggregates across every module, so it doesn't map to one `module:action`
+check; any logged-in user can see it (the detail views behind each card's `link` are separately
+permission-gated).
+
 ## `GET /dashboard/summary`
 
 Returns `200 OK`:

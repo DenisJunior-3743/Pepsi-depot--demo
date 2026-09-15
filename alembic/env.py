@@ -14,6 +14,7 @@ from app.db.session import Base
 from app.modules.admin import models as admin_models  # noqa: F401
 from app.factory import models as factory_models  # noqa: F401
 from app.depot import models as depot_models  # noqa: F401
+from app.auth import models as auth_models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

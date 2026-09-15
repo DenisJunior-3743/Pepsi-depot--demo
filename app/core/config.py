@@ -6,6 +6,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql://postgres:postgres@localhost:5432/pepsi_depo"
     environment: str = "development"
+    secret_key: str = "dev-only-insecure-secret-change-me"
+    access_token_expire_minutes: int = 60 * 12
 
 
 settings = Settings()

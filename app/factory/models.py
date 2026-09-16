@@ -5,7 +5,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.modules.admin.models import Product, Quantity
+from app.modules.admin.models import Depot, Personnel, Product, Quantity
 from app.db.session import Base
 
 
@@ -66,11 +66,16 @@ class SupplyHistory(Base):
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
     quantity_id: Mapped[int] = mapped_column(ForeignKey("quantities.id"), nullable=False, index=True)
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Nullable only because a historical row predates these fields - always required by the API for new dispatches.
+    depot_id: Mapped[int | None] = mapped_column(ForeignKey("depots.id"), nullable=True, index=True)
+    supplier_id: Mapped[int | None] = mapped_column(ForeignKey("personnel.id"), nullable=True, index=True)
     status: Mapped[SupplyStatus] = mapped_column(SqlEnum(SupplyStatus), default=SupplyStatus.pending, nullable=False)
     rejection_reason: Mapped[str | None] = mapped_column(nullable=True)
     created_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     product: Mapped[Product] = relationship()
     quantity_record: Mapped[Quantity] = relationship()
+    depot: Mapped[Depot | None] = relationship()
+    supplier: Mapped[Personnel | None] = relationship()
 
     @property
     def quantity_value(self) -> str:
@@ -79,3 +84,11 @@ class SupplyHistory(Base):
     @property
     def product_name(self) -> str:
         return self.product.name
+
+    @property
+    def depot_name(self) -> str | None:
+        return self.depot.name if self.depot else None
+
+    @property
+    def supplier_name(self) -> str | None:
+        return self.supplier.name if self.supplier else None

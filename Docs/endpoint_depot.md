@@ -1,6 +1,6 @@
 # Depot Module API
 
-The Depot Module is available under `/depot`. `depot_id` and personnel IDs (`confirmed_by_id`, `sold_by_id`, `supplier_id`) must still be passed explicitly in request bodies — login identifies *who* is calling for permission-checking purposes, but doesn't yet auto-fill these fields, so the frontend still sources them from whatever depot/user context it has selected (e.g. a depot picker, or `personnel_id` from `GET /auth/me`).
+The Depot Module is available under `/depot`. `depot_id` and personnel IDs (`confirmed_by_id`, `sold_by_id`) must still be passed explicitly in request bodies for **sales** — login identifies *who* is calling for permission-checking purposes, but doesn't yet auto-fill these fields, so the frontend still sources them from whatever depot/user context it has selected (e.g. a depot picker, or `personnel_id` from `GET /auth/me`). **Restock confirm/reject no longer take `depot_id` or `supplier_id`** — both now come from the supply record itself (Factory sets them at dispatch time), so there's nothing left to conflict or spoof.
 
 The module reads and writes Admin's `products`, `quantities`, `depots`, `personnel`, and `prices`, and reads/updates Factory's `supply_history`. It does not create Admin or Factory records on its own.
 
@@ -16,24 +16,25 @@ This module reads reference data it never creates itself:
 - `GET /admin/depots`, `/admin/products`, `/admin/quantities`, `/admin/personnel`, `/admin/prices` —
   every dropdown on every form in this module (depot picker, product/quantity picker, "confirmed
   by"/"sold by" personnel picker) comes from these. Build Admin's list endpoints first.
-- `GET /factory/supplies` — a delivery can't be confirmed/rejected here until Factory has dispatched
-  it there first. The "pending deliveries" screen is really a filtered view of Factory's data (see
-  the note just below on why that filter doesn't fully work yet).
+- `GET /factory/supplies?status=pending&depot_id=X` — a delivery can't be confirmed/rejected here
+  until Factory has dispatched it there first, and every dispatch now names its target depot, so
+  this filter gives you the depot's actual "pending deliveries" queue directly — no out-of-band
+  coordination needed.
 
 ### Typical frontend flow
 
-1. Depot attendant sees a delivery is coming (out-of-band for now — see note below) →
-   `POST /depot/restock/{supply_history_id}/confirm` or `.../reject`.
-2. Depot attendant checks depot stock → `GET /depot/stock`.
-3. Depot attendant/seller records a sale → `POST /depot/sales` (auto-prices from Admin's `prices`
+1. Depot attendant opens their "pending deliveries" screen →
+   `GET /factory/supplies?status=pending&depot_id=<their depot>`.
+2. They pick one and confirm or reject it →
+   `POST /depot/restock/{supply_history_id}/confirm` or `.../reject` — just `quantity_received`
+   (confirm) or `reason` (reject), nothing about which depot or who supplied it, that's already on
+   the supply record.
+3. Depot attendant checks depot stock → `GET /depot/stock`.
+4. Depot attendant/seller records a sale → `POST /depot/sales` (auto-prices from Admin's `prices`
    unless overridden).
-4. Seller checks today's running total → `GET /depot/sales-current` (this is the "cumulative daily
+5. Seller checks today's running total → `GET /depot/sales-current` (this is the "cumulative daily
    sales that clears at midnight" screen from the project brief — no special "clear" action needed,
    it's just always scoped to today).
-
-## Important: Factory doesn't know about depots yet
-
-`supply_history` (the dispatch record from the Factory Module) has **no `depot_id` field**. This means there is currently no way to ask the API "what deliveries are pending for depot X" — the frontend has to know out-of-band (via team communication, a shared sheet, whatever) which `supply_history_id` is headed to which depot, and pass `depot_id` itself when confirming/rejecting. Once Factory adds `depot_id`, this doc will be updated and the depot-filtering gap goes away. Until then, build the "confirm this delivery" screen around a manually-entered or manually-selected supply ID.
 
 ## Pagination and filtering
 
@@ -66,13 +67,13 @@ This is how stock actually enters a depot. A depot attendant confirms or rejects
 Request:
 ```json
 {
-  "depot_id": 3,
   "quantity_received": 60,
-  "supplier_id": 8,
   "confirmed_by_id": 8
 }
 ```
-`supplier_id` and `confirmed_by_id` are optional personnel IDs. `quantity_received` is what the attendant physically counted.
+`confirmed_by_id` is an optional personnel ID (whoever's doing the confirming). `quantity_received`
+is what the attendant physically counted. `depot_id` and `supplier_id` are **not** part of this
+request — they come from the supply record (`supply_history_id` in the URL already identifies both).
 
 **Read the `status` field in the response, not just the HTTP status code.** The request itself returns `201 Created` either way — but if `quantity_received` doesn't match the amount Factory dispatched, the entry is automatically saved with `"status": "rejected"` and an auto-filled `rejection_reason` (`"Quantity mismatch: expected X, received Y"`) instead of failing. Only a matching quantity produces `"status": "confirmed"` and credits the depot's stock. Show the user the resulting status, don't assume success from the 201 alone.
 
@@ -107,12 +108,13 @@ On a real confirm, this also flips the corresponding Factory `supply_history.sta
 Request:
 ```json
 {
-  "depot_id": 3,
   "reason": "Truck broke down, crates never arrived",
   "confirmed_by_id": 8
 }
 ```
-`reason` is required (min 3 characters) — this is the message the factory manager sees. `quantity_received` and `supplier_id` are optional.
+`reason` is required (min 3 characters) — this is the message the factory manager sees.
+`quantity_received` and `confirmed_by_id` are optional. Same as confirm: no `depot_id`/`supplier_id`
+in the request, they come from the supply record.
 
 Same response shape as confirm, always with `"status": "rejected"`. Same `404`/`409` errors as confirm. This also flips Factory's `supply_history.status` to `rejected` with your `reason`, and restores the dispatched amount back to `factory_current_stock`.
 

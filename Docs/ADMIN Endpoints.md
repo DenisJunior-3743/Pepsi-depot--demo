@@ -159,6 +159,9 @@ Responses:
 `GET /admin/personnel`
 
 - `200 OK` — returns a paginated list of personnel records (see Pagination above)
+- Optional filters: `role_id`, `depot_id` — e.g. `GET /admin/personnel?role_id=5` to populate a
+  "pick a supplier" or "pick a depot attendant" dropdown scoped to a specific role, or
+  `?depot_id=3` to list everyone currently assigned to one depot.
 
 ### Get personnel by ID
 `GET /admin/personnel/{personnel_id}`

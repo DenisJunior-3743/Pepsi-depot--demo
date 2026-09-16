@@ -106,7 +106,9 @@ Stock responses contain `id`, `product_id`, `product_name`, `quantity_id`, `quan
 
 ### `POST /factory/supplies`
 
-Creates `supply_history` record(s) and decreases `factory_current_stock` atomically.
+Creates `supply_history` record(s) and decreases `factory_current_stock` atomically. This is a
+dispatch — it names both the **target depot** and the **person responsible for the delivery**, not
+just what's being sent.
 
 Request (array — see Batch creation above):
 
@@ -115,12 +117,18 @@ Request (array — see Batch creation above):
   {
     "product_id": 1,
     "quantity_id": 1,
-    "amount": 80
+    "amount": 80,
+    "depot_id": 3,
+    "supplier_id": 8
   }
 ]
 ```
 
-All three fields must be positive. The product and quantity must exist in the shared Admin tables. Returns `201 Created` with an array of the created records.
+All fields required and positive. `product_id`/`quantity_id` must exist in Admin's shared tables;
+`depot_id` must exist in Admin's `depots`; `supplier_id` must exist in Admin's `personnel` — fetch
+`GET /admin/depots` and `GET /admin/personnel` (optionally `?role_id=X` filtered to whichever role
+your team uses for dispatch-responsible staff) to populate these two pickers, same pattern as
+product/quantity. Returns `201 Created` with an array of the created records.
 
 The stock calculation is:
 
@@ -134,13 +142,17 @@ The request returns `409 Conflict` when available stock is less than `amount`. I
 
 Returns SupplyHistory records ordered newest first. Returns `200 OK`.
 
-Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`), `date`, `product_id`, `product_name`, `quantity`, and `status` (`pending`, `received`, or `rejected`).
+Query parameters are `skip` (default `0`), `limit` (default `10`, maximum `10`), `date`, `product_id`, `product_name`, `quantity`, `status` (`pending`, `received`, or `rejected`), and `depot_id` — this last one is how Depot's "what's pending for my depot" screen is built.
 
 ### `GET /factory/supplies/{supply_id}`
 
 Returns one SupplyHistory record. Returns `200 OK` or `404 Not Found`.
 
-SupplyHistory responses contain `id`, `product_id`, `quantity_id`, `amount`, `product_name`, `quantity_value`, `status`, `rejection_reason`, and `created_date`. `status` is `pending`, `received`, or `rejected`.
+SupplyHistory responses contain `id`, `product_id`, `quantity_id`, `amount`, `product_name`,
+`quantity_value`, `depot_id`, `depot_name`, `supplier_id`, `supplier_name`, `status`,
+`rejection_reason`, and `created_date`. `status` is `pending`, `received`, or `rejected`.
+`depot_id`/`supplier_id` (and their `_name` companions) are `null` only on the single historical row
+that predates this field.
 
 ### `PUT /factory/supplies/{supply_id}` and `DELETE /factory/supplies/{supply_id}`
 

@@ -110,10 +110,12 @@ def register_personnel(personnel_in: list[schemas.PersonnelCreate] = Body(..., m
 def paged_list_personnel(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
+    role_id: int | None = Query(None, gt=0),
+    depot_id: int | None = Query(None, gt=0),
     db: Session = Depends(get_db),
 ):
-    items = crud.paged_list_personnel(db, page=page, page_size=page_size)
-    return schemas.Page(items=items, total=crud.count_personnel(db), page=page, page_size=page_size)
+    items = crud.paged_list_personnel(db, page=page, page_size=page_size, role_id=role_id, depot_id=depot_id)
+    return schemas.Page(items=items, total=crud.count_personnel(db, role_id=role_id, depot_id=depot_id), page=page, page_size=page_size)
 
 
 @router.get(

@@ -47,6 +47,11 @@ def _get_supply(db: Session, supply_history_id: int) -> SupplyHistory:
     supply = db.get(SupplyHistory, supply_history_id)
     if supply is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supply record not found")
+    if supply.depot_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This supply predates depot tracking and has no destination depot - it can't be confirmed or rejected through this endpoint",
+        )
     return supply
 
 
@@ -84,11 +89,11 @@ def confirm_restock(db: Session, supply_history_id: int, data: RestockConfirm) -
     matched = data.quantity_received == supply.amount
     entry = RestockHistory(
         supply_history_id=supply.id,
-        depot_id=data.depot_id,
+        depot_id=supply.depot_id,
         product_id=supply.product_id,
         quantity_id=supply.quantity_id,
         quantity_delivered=data.quantity_received,
-        supplier_id=data.supplier_id,
+        supplier_id=supply.supplier_id,
         confirmed_by_id=data.confirmed_by_id,
         status=RestockStatus.confirmed if matched else RestockStatus.rejected,
         rejection_reason=None if matched else f"Quantity mismatch: expected {supply.amount}, received {data.quantity_received}",
@@ -115,11 +120,11 @@ def reject_restock(db: Session, supply_history_id: int, data: RestockReject) -> 
     _require_pending(supply)
     entry = RestockHistory(
         supply_history_id=supply.id,
-        depot_id=data.depot_id,
+        depot_id=supply.depot_id,
         product_id=supply.product_id,
         quantity_id=supply.quantity_id,
         quantity_delivered=data.quantity_received or 0,
-        supplier_id=data.supplier_id,
+        supplier_id=supply.supplier_id,
         confirmed_by_id=data.confirmed_by_id,
         status=RestockStatus.rejected,
         rejection_reason=data.reason,

@@ -17,17 +17,13 @@ class PagedResponse(BaseModel, Generic[T]):
 
 
 class RestockConfirm(BaseModel):
-    depot_id: int = Field(gt=0)
     quantity_received: int = Field(gt=0)
-    supplier_id: int | None = None
     confirmed_by_id: int | None = None
 
 
 class RestockReject(BaseModel):
-    depot_id: int = Field(gt=0)
     reason: str = Field(min_length=3)
     quantity_received: int | None = Field(default=None, ge=0)
-    supplier_id: int | None = None
     confirmed_by_id: int | None = None
 
 

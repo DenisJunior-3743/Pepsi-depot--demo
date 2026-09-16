@@ -2,9 +2,16 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.modules.admin.models import Product, Quantity
+from app.modules.admin.models import Depot, Personnel, Product, Quantity
 from app.factory.models import FactoryCurrentStock, ProductionRecord, SupplyHistory, SupplyStatus
 from app.factory.schemas import ProductionCreate, SupplyCreate, SupplyUpdate
+
+_SUPPLY_OPTIONS = (
+    selectinload(SupplyHistory.product),
+    selectinload(SupplyHistory.quantity_record),
+    selectinload(SupplyHistory.depot),
+    selectinload(SupplyHistory.supplier),
+)
 
 
 def _get_or_create_stock(db: Session, product_id: int, quantity_id: int) -> FactoryCurrentStock:
@@ -98,6 +105,10 @@ def create_supplies_batch(db: Session, data_list: list[SupplyCreate]) -> list[Su
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product not found: {data.product_id}")
         if db.get(Quantity, data.quantity_id) is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Quantity not found: {data.quantity_id}")
+        if db.get(Depot, data.depot_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Depot not found: {data.depot_id}")
+        if db.get(Personnel, data.supplier_id) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Supplier (personnel) not found: {data.supplier_id}")
     history_records = []
     try:
         for data in data_list:
@@ -162,7 +173,7 @@ def delete_supply(db: Session, supply: SupplyHistory) -> None:
 
 
 def get_supply(db: Session, supply_id: int) -> SupplyHistory:
-    supply = db.scalar(select(SupplyHistory).options(selectinload(SupplyHistory.product), selectinload(SupplyHistory.quantity_record)).where(SupplyHistory.id == supply_id))
+    supply = db.scalar(select(SupplyHistory).options(*_SUPPLY_OPTIONS).where(SupplyHistory.id == supply_id))
     if supply is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Supply not found")
     return supply
@@ -203,8 +214,18 @@ def list_production(db: Session, skip: int = 0, limit: int = 10, history_date=No
     return list(db.scalars(query.order_by(ProductionRecord.production_date.desc()).offset(skip).limit(limit)))
 
 
-def list_supplies(db: Session, skip: int = 0, limit: int = 10, history_date=None, product_id: int | None = None, product_name: str | None = None, quantity: int | None = None, status_filter: SupplyStatus | None = None) -> list[SupplyHistory]:
-    query = select(SupplyHistory).join(SupplyHistory.product).options(selectinload(SupplyHistory.product), selectinload(SupplyHistory.quantity_record))
+def list_supplies(
+    db: Session,
+    skip: int = 0,
+    limit: int = 10,
+    history_date=None,
+    product_id: int | None = None,
+    product_name: str | None = None,
+    quantity: int | None = None,
+    status_filter: SupplyStatus | None = None,
+    depot_id: int | None = None,
+) -> list[SupplyHistory]:
+    query = select(SupplyHistory).join(SupplyHistory.product).options(*_SUPPLY_OPTIONS)
     if history_date is not None:
         query = query.where(SupplyHistory.created_date >= history_date, SupplyHistory.created_date < history_date.replace(hour=23, minute=59, second=59, microsecond=999999))
     if product_id is not None:
@@ -215,4 +236,6 @@ def list_supplies(db: Session, skip: int = 0, limit: int = 10, history_date=None
         query = query.where(SupplyHistory.amount == quantity)
     if status_filter is not None:
         query = query.where(SupplyHistory.status == status_filter)
+    if depot_id is not None:
+        query = query.where(SupplyHistory.depot_id == depot_id)
     return list(db.scalars(query.order_by(SupplyHistory.created_date.desc()).offset(skip).limit(limit)))

@@ -93,10 +93,11 @@ def read_supply_history(
     product_name: str | None = None,
     quantity: int | None = Query(None, gt=0),
     status_filter: SupplyStatus | None = Query(default=None, alias="status"),
+    depot_id: int | None = Query(None, gt=0),
     db: Session = Depends(get_db),
 ):
     history_datetime = datetime.combine(history_date, datetime.min.time()) if history_date else None
-    return list_supplies(db, skip, limit, history_datetime, product_id, product_name, quantity, status_filter)
+    return list_supplies(db, skip, limit, history_datetime, product_id, product_name, quantity, status_filter, depot_id)
 
 
 @router.get(

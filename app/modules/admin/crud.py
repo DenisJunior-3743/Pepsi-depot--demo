@@ -81,16 +81,22 @@ def get_personnel(db: Session, personnel_id: int) -> models.Personnel | None:
     return db.get(models.Personnel, personnel_id)
 
 
-def paged_list_personnel(db: Session, page: int = 1, page_size: int = 10) -> list[models.Personnel]:
-    return list(
-        db.scalars(
-            select(models.Personnel).order_by(models.Personnel.id).offset((page - 1) * page_size).limit(page_size)
-        )
-    )
+def paged_list_personnel(db: Session, page: int = 1, page_size: int = 10, role_id: int | None = None, depot_id: int | None = None) -> list[models.Personnel]:
+    query = select(models.Personnel)
+    if role_id is not None:
+        query = query.where(models.Personnel.role_id == role_id)
+    if depot_id is not None:
+        query = query.where(models.Personnel.depot_id == depot_id)
+    return list(db.scalars(query.order_by(models.Personnel.id).offset((page - 1) * page_size).limit(page_size)))
 
 
-def count_personnel(db: Session) -> int:
-    return _count(db, models.Personnel)
+def count_personnel(db: Session, role_id: int | None = None, depot_id: int | None = None) -> int:
+    query = select(func.count()).select_from(models.Personnel)
+    if role_id is not None:
+        query = query.where(models.Personnel.role_id == role_id)
+    if depot_id is not None:
+        query = query.where(models.Personnel.depot_id == depot_id)
+    return db.scalar(query) or 0
 
 
 def update_personnel(db: Session, personnel: models.Personnel, personnel_in: schemas.PersonnelCreate) -> models.Personnel:

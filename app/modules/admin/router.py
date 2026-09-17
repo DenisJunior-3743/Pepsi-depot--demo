@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_permission
@@ -226,6 +227,40 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return product
 
 
+@router.put(
+    "/products/{product_id}",
+    response_model=schemas.ProductRead,
+    dependencies=[Depends(require_permission("admin.products", PermissionAction.update))],
+)
+def update_product(product_id: int, product_in: schemas.ProductCreate, db: Session = Depends(get_db)):
+    product = crud.get_product(db, product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    existing = crud.get_product_by_name(db, product_in.name)
+    if existing and existing.id != product_id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Product already exists")
+    return crud.update_product(db, product, product_in)
+
+
+@router.delete(
+    "/products/{product_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_permission("admin.products", PermissionAction.delete))],
+)
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    product = crud.get_product(db, product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    try:
+        crud.delete_product(db, product)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Product is still referenced elsewhere (e.g. factory/depot stock or history) and cannot be deleted",
+        )
+
+
 @router.post(
     "/quantities",
     response_model=list[schemas.QuantityRead],
@@ -264,6 +299,40 @@ def get_quantity(quantity_id: int, db: Session = Depends(get_db)):
     if quantity is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
     return quantity
+
+
+@router.put(
+    "/quantities/{quantity_id}",
+    response_model=schemas.QuantityRead,
+    dependencies=[Depends(require_permission("admin.quantities", PermissionAction.update))],
+)
+def update_quantity(quantity_id: int, quantity_in: schemas.QuantityCreate, db: Session = Depends(get_db)):
+    quantity = crud.get_quantity(db, quantity_id)
+    if quantity is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
+    existing = crud.get_quantity_by_value(db, quantity_in.quantity)
+    if existing and existing.id != quantity_id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Quantity already exists")
+    return crud.update_quantity(db, quantity, quantity_in)
+
+
+@router.delete(
+    "/quantities/{quantity_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_permission("admin.quantities", PermissionAction.delete))],
+)
+def delete_quantity(quantity_id: int, db: Session = Depends(get_db)):
+    quantity = crud.get_quantity(db, quantity_id)
+    if quantity is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quantity not found")
+    try:
+        crud.delete_quantity(db, quantity)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Quantity is still referenced elsewhere (e.g. prices, factory/depot stock or history) and cannot be deleted",
+        )
 
 
 @router.post(

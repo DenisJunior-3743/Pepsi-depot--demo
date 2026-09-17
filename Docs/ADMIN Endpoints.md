@@ -263,6 +263,29 @@ Responses:
 - `200 OK` — returns the product
 - `404 Not Found` — no product with that ID
 
+### Update product
+`PUT /admin/products/{product_id}`
+
+Request body:
+```json
+{
+  "name": "Pepsi 500ml Updated"
+}
+```
+
+Responses:
+- `200 OK` — returns the updated product
+- `404 Not Found` — no product with that ID
+- `409 Conflict` — another product already has that `name`
+
+### Delete product
+`DELETE /admin/products/{product_id}`
+
+Responses:
+- `204 No Content` — product deleted
+- `404 Not Found` — no product with that ID
+- `409 Conflict` — product is still referenced elsewhere (e.g. factory/depot stock or history)
+
 ---
 
 ## Quantities
@@ -297,6 +320,29 @@ Responses:
 
 - `200 OK` — returns the quantity
 - `404 Not Found` — no quantity with that ID
+
+### Update quantity
+`PUT /admin/quantities/{quantity_id}`
+
+Request body:
+```json
+{
+  "quantity": "48"
+}
+```
+
+Responses:
+- `200 OK` — returns the updated quantity
+- `404 Not Found` — no quantity with that ID
+- `409 Conflict` — another quantity already has that value
+
+### Delete quantity
+`DELETE /admin/quantities/{quantity_id}`
+
+Responses:
+- `204 No Content` — quantity deleted
+- `404 Not Found` — no quantity with that ID
+- `409 Conflict` — quantity is still referenced elsewhere (e.g. prices, factory/depot stock or history)
 
 ---
 
@@ -420,10 +466,3 @@ Responses:
 Responses:
 - `204 No Content` — price deleted
 - `404 Not Found` — no price for that quantity ID
-
----
-
-## Not yet implemented
-
-These are part of the admin scope but not built yet:
-- PUT/DELETE for products, quantities

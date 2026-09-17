@@ -160,6 +160,18 @@ def count_products(db: Session) -> int:
     return _count(db, models.Product)
 
 
+def update_product(db: Session, product: models.Product, product_in: schemas.ProductCreate) -> models.Product:
+    product.name = product_in.name
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+def delete_product(db: Session, product: models.Product) -> None:
+    db.delete(product)
+    db.commit()
+
+
 def create_quantities_batch(db: Session, quantities_in: list[schemas.QuantityCreate]) -> list[models.Quantity]:
     quantities = [models.Quantity(quantity=q.quantity) for q in quantities_in]
     db.add_all(quantities)
@@ -187,6 +199,18 @@ def list_quantities(db: Session, page: int = 1, page_size: int = 10) -> list[mod
 
 def count_quantities(db: Session) -> int:
     return _count(db, models.Quantity)
+
+
+def update_quantity(db: Session, quantity: models.Quantity, quantity_in: schemas.QuantityCreate) -> models.Quantity:
+    quantity.quantity = quantity_in.quantity
+    db.commit()
+    db.refresh(quantity)
+    return quantity
+
+
+def delete_quantity(db: Session, quantity: models.Quantity) -> None:
+    db.delete(quantity)
+    db.commit()
 
 
 def create_depots_batch(db: Session, depots_in: list[schemas.DepotCreate]) -> list[models.Depot]:
